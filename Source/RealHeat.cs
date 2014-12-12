@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -26,20 +26,32 @@ namespace RealHeat
         }
 
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Shockwave", guiUnits = "", guiFormat = "G")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Shockwave", guiUnits = "", guiFormat = "G")]
         public string displayShockwave;
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Ambient", guiUnits = "", guiFormat = "G")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Ambient", guiUnits = "", guiFormat = "G")]
         public string displayAmbient;
 
         [KSPField(isPersistant = false, guiActive = true, guiName = "Temperature", guiUnits = "C", guiFormat = "F0")]
         public float displayTemperature;
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
         public float displayFluxIn;
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Flux Out", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux Out", guiUnits = "kW/m^2", guiFormat = "N3")]
         public float displayFluxOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Re", guiUnits = "", guiFormat = "E3")]
+        public float displayReOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "h", guiUnits = "kW/(m^2*K)", guiFormat = "N3")]
+        public float displayHOut;
+
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Cf", guiUnits = "", guiFormat = "F3")]
+        public float displayCfOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Ablation Rate", guiUnits = "", guiFormat = "F3")]
+        public float displayLossOut;
 
         [KSPField(isPersistant = true)]
         public float adjustCollider = 0;
@@ -85,10 +97,10 @@ namespace RealHeat
         public string ablative;
 
         [KSPField(isPersistant = true)]
-        public float lossExp = -1;
+        public float lossExp = 4.0f;
 
         [KSPField(isPersistant = true)]
-        public float lossConst = 1.0f;
+        public float lossConst = 0.1f;
 
         [KSPField(isPersistant = true)]
         public float pyrolysisLoss = -1;
@@ -168,12 +180,14 @@ namespace RealHeat
             nodeArea = new Dictionary<string, double>();
         }
 
-        public override void OnStart(StartState state)
+        //public override void OnStart(StartState state)
+        public void Start()
         {
-            part.heatDissipation = part.heatConductivity = 0f;
+            part.heatDissipation = 0f;
+            part.heatConductivity = 0f;
             counter = 0;
-            if (state == StartState.Editor)
-                return;
+            //if (state == StartState.Editor)
+            //    return;
             if (myWindow != null)
                 myWindow.displayDirty = true;
             // moved part detection logic to OnAWake
@@ -273,7 +287,7 @@ namespace RealHeat
 
         public float CalculateTemperatureDelta()
         {
-            double flux = fluxIn - fluxOut;
+            double flux = fluxIn; // -fluxOut;
             double multiplier = (mass - shieldMass) * heatCapacity + shieldMass * shieldHeatCapacity;
             //multiplier *= 1000; // convert J/kg K to kJ/t K results in everything cancelling nicely
             return (float)(flux / multiplier);
@@ -361,10 +375,14 @@ namespace RealHeat
 
             CalculateParameters();
 
-            ManageHeatConduction();
+            fluxIn = 0.0;
+            fluxOut = 0.0;
+
+            //ManageHeatConduction();
             ManageHeatConvection(velocity);
             ManageHeatRadiation();
-            ManageSolarHeat();
+            ManageHeatAblation();
+            //ManageSolarHeat();
 
             fluxIn *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
             fluxOut *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
@@ -503,9 +521,28 @@ namespace RealHeat
             if (inAtmo)
             {
                 // convective heating in atmosphere
-                double baseFlux = RealHeatUtils.heatMultiplier * Cp * Math.Sqrt(speed) * Math.Sqrt(density);
-                fluxIn += baseFlux * frontalArea * (adjustedAmbient - temperature);
-                fluxIn += baseFlux * leeArea * (ambient + (adjustedAmbient - ambient) * leeConst - temperature);
+                //double baseFlux = RealHeatUtils.heatMultiplier * Cp * Math.Sqrt(speed) * Math.Sqrt(density);
+                //fluxIn += baseFlux * frontalArea * (adjustedAmbient - temperature);
+                //fluxIn += baseFlux * leeArea * (ambient + (adjustedAmbient - ambient) * leeConst - temperature);
+
+                double refL = 2 * Math.Sqrt(S) / 3.1415926535;
+                double Re = speed * density * refL / (15.97 * .000001);
+                double Cf = 1.328 / Math.Sqrt(Re);
+                displayReOut = (float)Re;
+
+                double Nu = .037 * Math.Pow(Re, 0.8) * Math.Pow(0.7, 1.0 / 3.0);
+                double h = Nu / refL * .3; //W/m^2
+                displayHOut = (float)h*.001f;
+
+                fluxIn += h * (shockwave + ambient - temperature) * S;
+
+                //fluxIn += density * Math.Pow(speed, 3) * S * Cf / 4;
+                //displayCfOut = (float)Cf;
+            }
+            else
+            {
+                displayReOut = 0.0f;
+                displayHOut = 0.0f;
             }
             //Debug.Log("Part: " + part.name + "Convection; Flux out: " + fluxOut + " Flux in: " + fluxIn);
         }
@@ -524,24 +561,24 @@ namespace RealHeat
         public void ManageHeatRadiation()
         {
             double temperatureVal = 0;
-            if (inAtmo)
-            {
-                // radiant heating in atmosphere
-                temperatureVal = adjustedAmbient;
-                temperatureVal *= temperatureVal;
-                temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
+            //if (inAtmo)
+            //{
+            //    // radiant heating in atmosphere
+            //    temperatureVal = adjustedAmbient;
+            //    temperatureVal *= temperatureVal;
+            //    temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
 
-                fluxIn += frontalArea * temperatureVal * AIREMISS * SIGMA;
+            //    fluxIn += frontalArea * temperatureVal * AIREMISS * SIGMA;
 
-                temperatureVal = (ambient + (adjustedAmbient - ambient) * leeConst);
-                temperatureVal *= temperatureVal;
-                temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
+            //    temperatureVal = (ambient + (adjustedAmbient - ambient) * leeConst);
+            //    temperatureVal *= temperatureVal;
+            //    temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
 
-                fluxIn += leeArea * temperatureVal * AIREMISS * SIGMA;
-            }
+            //    fluxIn += leeArea * temperatureVal * AIREMISS * SIGMA;
+            //}
             // radiant cooling
 
-            temperatureVal = temperature;
+            temperatureVal = temperature+CTOK;
             temperatureVal *= temperatureVal;
             temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
 
@@ -554,18 +591,23 @@ namespace RealHeat
 
         public void ManageHeatAblation()
         {
+            double tempAbs = 0;
             if (part.Resources.Contains(ablative) && lossExp > 0 && temperature > ablationTempThresh)
             {
                 if (direction.magnitude == 0) // an empty vector means the shielding exists on all sides
                     dot = 1;
                 else // check the angle between the shock front and the shield
                 {
-                    dot = Vector3.Dot(velocity.normalized, part.transform.TransformDirection(direction).normalized);
+                    dot = -Vector3.Dot(velocity.normalized, part.transform.TransformDirection(direction).normalized);
                     if (dot < 0f)
                         dot = 0f;
                 }
+
+                tempAbs = part.temperature + CTOK;
                 double ablativeAmount = part.Resources[ablative].amount;
-                double loss = (double)lossConst * Math.Pow(dot, 0.25) * Math.Exp(-lossExp / temperature);
+                double loss = (double)lossConst * Math.Exp(-lossExp / tempAbs);// *Math.Pow(dot, 0.25);
+                //displayLossOut = (float)loss;
+                displayLossOut = (tempAbs > ablationTempThresh) ? 1 : 0;
                 loss *= ablativeAmount;
                 part.Resources[ablative].amount -= loss * deltaTime;
                 fluxOut += pyrolysisLoss * loss;
