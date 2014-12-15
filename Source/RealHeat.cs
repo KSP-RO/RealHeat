@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Linq;
 using UnityEngine;
 using KSP;
+using ferram4;
 
 namespace RealHeat
 {
@@ -26,6 +27,7 @@ namespace RealHeat
         }
 
 
+        #region KSPFields
         [KSPField(isPersistant = false, guiActive = true, guiName = "Shockwave", guiUnits = "", guiFormat = "G")]
         public string displayShockwave;
 
@@ -113,10 +115,11 @@ namespace RealHeat
 
         [KSPField(isPersistant = true)]
         public float emissiveConst = 0; // coefficient for emission
+        #endregion
 
         // per-frame shared members
         protected double counter = 0; // for initial delay
-		protected double deltaTime = 0; // seconds since last FixedUpdate
+        protected double deltaTime = 0; // seconds since last FixedUpdate
         public double ambient = 0; // ambient temperature (K)
         public double density = 1.225; // ambient density (kg/m^3)
         protected bool inAtmo = false;
@@ -144,20 +147,25 @@ namespace RealHeat
         public double SOLARLUM = 3.8e+26; // can't be const, since it depends on what Kerbin's SMA is.
         public const double SOLARCONST = 1370;
 
+        protected Vector3[] nodeOrient;
+        protected Vector3 vabUp = new Vector3(0.0f, 0.0f, 1.0f); //centerline of part relative to centerline of vehicle
+
+        double aoa = 0.0; //angle of attack
+        Vector3 orientation = Vector3.zero; //centerline orientation
+        bool hasNShock = false; //if part/node has a normal shock
+
+        //FAR Modules;  MAKE SURE TO ONLY USE EITHER DRAG OR WING, NOT BOTH
+        FARBasicDragModel dragModel = null;
+        FARWingAerodynamicModel aeroModel = null;
+        FARControlSys ctrlSys = null;
+        FARBaseAerodynamics baseAero = null;
+
 
         public float heatConductivity = 0.0f;
 
 
         [KSPField]
-        private bool is_debugging = false;
-
-        // Interaction
-        private PartModule FARPartModule = null;
-        private bool hasFAR = false;
-        FieldInfo fiCd = null;
-        FieldInfo fiS = null;
-
-        public Dictionary<string, double> nodeArea;
+        private bool is_debugging = false;  
 
         public override string GetInfo()
         {
@@ -176,36 +184,17 @@ namespace RealHeat
         public override void OnAwake()
         {
             base.OnAwake();
-			FARPartModule = null;
-            nodeArea = new Dictionary<string, double>();
         }
 
-        //public override void OnStart(StartState state)
         public void Start()
         {
             part.heatDissipation = 0f;
             part.heatConductivity = 0f;
             counter = 0;
-            //if (state == StartState.Editor)
-            //    return;
-            if (myWindow != null)
-                myWindow.displayDirty = true;
-            // moved part detection logic to OnAWake
-            // exception: FAR.
-            if (part.Modules.Contains("FARBasicDragModel"))
-            {
-                FARPartModule = part.Modules["FARBasicDragModel"];
-                hasFAR = true;
-                fiCd = FARPartModule.GetType().GetField("Cd");
-                fiS = FARPartModule.GetType().GetField("SPlusAttachArea");
-            }
-            else if (part.Modules.Contains("FARWingAerodynamicModel"))
-            {
-                FARPartModule = part.Modules["FARWingAerodynamicModel"];
-                hasFAR = true;
-                fiCd = FARPartModule.GetType().GetField("Cd");
-                fiS = FARPartModule.GetType().GetField("S");
-            }
+
+            getFARModules();
+            getNodeOrientations();
+            vabUp = FARGeoUtil.GuessUpVector(part);
 
             if (ablative == null)
                 ablative = "None";
@@ -218,44 +207,99 @@ namespace RealHeat
                 SOLARLUM = SOLARCONST * Math.Pow(FlightGlobals.Bodies[1].referenceBody.orbit.semiMajorAxis, 2) * 4 * Math.PI;
         }
 
-        private bool GetShieldedStateFromFAR()
+        private void getNodeOrientations()
         {
-            // Check if this part is shielded by fairings/cargobays according to FAR's information...
+            Vector3 nodeOffset = Vector3.zero; //node offset from CoM
+            Ray nodeCheck; //ray to check for colliders
+            RaycastHit[] hits; //hits from raycast
+            
+            nodeOrient = new Vector3[part.attachNodes.Count];
+            for (int i = 0; i < part.attachNodes.Count; i++)
+            {
+                if (part.attachNodes[i].attachedPart != null) continue;
 
-            if ((object)FARPartModule != null)
-            {
-                //Debug.Log("[RHC] Part has FAR module.");
-                try
+                //Check to make sure nodeOrient is pointing out
+                nodeOrient[i] = part.attachNodes[i].orientation;
+                nodeOffset = part.attachNodes[i].offset;
+                nodeCheck = new Ray(nodeOffset * 1.01f, nodeOrient[i]);
+
+                hits = Physics.RaycastAll(nodeCheck, 10);
+                for(int j = 0; j < hits.Length; j++)
                 {
-                    FieldInfo fi = FARPartModule.GetType().GetField("isShielded");
-                    bool isShieldedFromFAR = ((bool)(fi.GetValue(FARPartModule)));
-                    //Debug.Log("[RHC] Found FAR isShielded: " + isShieldedFromFAR.ToString());
-                    return isShieldedFromFAR;
-                }
-                catch (Exception e)
-                {
-                    Debug.Log("[RHC]: " + e.Message);
-                    return false;
-                }
-            }
-            else
-            {
-                //Debug.Log("[RHC] No FAR module.");
-                return false;
+                    // if the ray hit the part, reverse the normal
+                    if (hits[j].collider == part.collider)  //may need to add hit.rigidbody != null
+                    {
+                        nodeOrient[i] = -nodeOrient[i];
+                        Debug.Log("Reversed node " + i + " on part " + part.name);
+                        break;
+                    }
+                } 
             }
         }
 
-        public bool IsShielded(Vector3 direction)
-		{   
-            Ray ray = new Ray(part.transform.position - direction.normalized * (1.0f+adjustCollider), direction.normalized);
-			RaycastHit[] hits = Physics.RaycastAll (ray, 10);
-			foreach (RaycastHit hit in hits) {
-				if(hit.rigidbody != null && hit.collider != part.collider) {
-					return true;
-				}
-			}
-			return false;
-		}
+        private void getFARModules()
+        {
+            //Get ControlSys module
+            ctrlSys = null;
+
+            if(part.Modules.Contains("FARControlSys"))
+            {
+                ctrlSys = (FARControlSys)part.Modules["FARControlSys"];
+            }
+
+            for(int i = 0; i < part.vessel.parts.Count && ctrlSys == null; i++)
+            {
+                if(part.vessel.parts[i].Modules.Contains("FARControlSys"))
+                {
+                    ctrlSys = (FARControlSys)part.vessel.parts[i].Modules["FARControlSys"];
+                }
+            }
+
+            //Get either aero or drag model
+            aeroModel = null;
+            dragModel = null;
+            if (part.Modules.Contains("FARBasicDragModel"))
+            {
+                dragModel = (FARBasicDragModel)part.Modules["FARBasicDragModel"];
+            }
+            else if (part.Modules.Contains("FARWingAerodynamicModel"))
+            {
+                aeroModel = (FARWingAerodynamicModel)part.Modules["FARWingAerodynamicModel"];
+            }
+
+            //Get baseAero model
+            if (part.Modules.Contains("FARBaseAerodynamics"))
+            {
+                baseAero = (FARBaseAerodynamics)part.Modules["FARBaseAerodynamics"];
+            }
+        }
+
+        private bool getShieldedState()
+        {
+            // Check if this part is shielded by fairings/cargobays according to FAR's information...
+            if(baseAero != null)
+            {
+                return baseAero.isShielded;
+            }
+            return false;
+        }
+
+        private void getPartProperties()
+        {
+            
+        }
+
+        //public bool IsShielded(Vector3 direction)
+        //{   
+        //    Ray ray = new Ray(part.transform.position - direction.normalized * (1.0f+adjustCollider), direction.normalized);
+        //    RaycastHit[] hits = Physics.RaycastAll (ray, 10);
+        //    foreach (RaycastHit hit in hits) {
+        //        if(hit.rigidbody != null && hit.collider != part.collider) {
+        //            return true;
+        //        }
+        //    }
+        //    return false;
+        //}
 
         public void CalculateParameters()
         {
@@ -275,14 +319,15 @@ namespace RealHeat
                 frontalArea = S;
                 leeArea = 0;
             }
-            if (GetShieldedStateFromFAR())
-                adjustedAmbient = part.temperature + CTOK; // FIXME: Change to the fairing part's temperature
-            else
-                if (IsShielded(velocity))
-                    adjustedAmbient = ambient + shockwave * leeConst;
-                else
-                    adjustedAmbient = shockwave + ambient;
-            fluxIn = 0;
+            //if (getShieldedState())
+            //    adjustedAmbient = part.temperature + CTOK; // FIXME: Change to the fairing part's temperature
+            //else
+            //    if (IsShielded(velocity))
+            //        adjustedAmbient = ambient + shockwave * leeConst;
+            //    else
+            //        adjustedAmbient = shockwave + ambient;
+            fluxIn = 0.0;
+            fluxOut = 0.0;
         }
 
         public float CalculateTemperatureDelta()
@@ -315,25 +360,6 @@ namespace RealHeat
             temperature = part.temperature + CTOK;
             density = RealHeatUtils.CalculateDensity(vessel.mainBody, vessel.staticPressure, ambient);
 
-            // calculate ballistic coefficient for root part, grab from it if other part
-            if (part == vessel.rootPart)
-            {
-                double sumArea = 0;
-                double sumMass = 0;
-                foreach (Part p in vessel.Parts)
-                {
-                    foreach (ModuleRealHeat m in p.Modules.OfType<ModuleRealHeat>())
-                        sumArea += m.S * m.Cd;
-                    sumMass += part.mass + part.GetResourceMass();
-                }
-                ballisticCoeff = (sumMass + MASSEPSILON) * 1000 / sumArea;
-            }
-            else
-            {
-                ModuleRealHeat m = (ModuleRealHeat)vessel.rootPart.Modules["ModuleRealHeat"];
-                if ((object)m != null)
-                    ballisticCoeff = m.ballisticCoeff;
-            }
 
             // get mass for thermal calculations
             if (shieldMass <= 0)
@@ -578,7 +604,7 @@ namespace RealHeat
             //}
             // radiant cooling
 
-            temperatureVal = temperature+CTOK;
+            temperatureVal = temperature;
             temperatureVal *= temperatureVal;
             temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
 
