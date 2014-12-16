@@ -37,7 +37,7 @@ namespace RealHeat
         [KSPField(isPersistant = false, guiActive = true, guiName = "Temperature", guiUnits = "C", guiFormat = "F0")]
         public float displayTemperature;
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
         public float displayFluxIn;
 
         [KSPField(isPersistant = false, guiActive = false, guiName = "Flux Out", guiUnits = "kW/m^2", guiFormat = "N3")]
@@ -55,7 +55,7 @@ namespace RealHeat
         [KSPField(isPersistant = false, guiActive = false, guiName = "Ablation Rate", guiUnits = "", guiFormat = "F3")]
         public float displayLossOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "AOA", guiUnits = " deg", guiFormat = "E3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "AOA", guiUnits = " deg", guiFormat = "F3")]
         public float displayAOAOut;
 
         [KSPField(isPersistant = false, guiActive = true, guiName = "Ref. Area", guiUnits = " m^2", guiFormat = "E3")]
@@ -63,6 +63,12 @@ namespace RealHeat
 
         [KSPField(isPersistant = false, guiActive = true, guiName = "Ref. Length", guiUnits = " m", guiFormat = "E3")]
         public float displayLOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Shock?", guiUnits = " ", guiFormat = "G")]
+        public bool displayShockOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Node Shock?", guiUnits = " ", guiFormat = "E2")]
+        public int displayNodeShockOut;
 
         [KSPField(isPersistant = true)]
         public float adjustCollider = 0;
@@ -148,6 +154,8 @@ namespace RealHeat
         protected float temperatureDelta = 0f; // change in temperature (K)
         protected double frontalArea = 1;
         protected double leeArea = 1;
+        protected double viscosity = 15.97e-6; //dynamic viscosity, kg/(m*s)
+        protected double atmoConductivity = 0.3; //W/(m*K)
 
         public const double CTOK = 273.15; // convert Celsius to Kelvin
         public const double SIGMA = 5.670373e-8; // Stefan–Boltzmann constant
@@ -162,6 +170,7 @@ namespace RealHeat
 
         double aoa = 0.0; //angle of attack
         Vector3 orientation = Vector3.zero; //centerline orientation
+        double maxTurnAngle = 0.0; //maximum shock turning angle for attached (oblique) shock
         bool hasNShock = false; //if part/node has a normal shock
 
         //FAR Modules;  MAKE SURE TO ONLY USE EITHER DRAG OR WING, NOT BOTH
@@ -223,22 +232,25 @@ namespace RealHeat
             Vector3 nodeOffset = Vector3.zero; //node offset from CoM
             Ray nodeCheck; //ray to check for colliders
             RaycastHit[] hits; //hits from raycast
-            
+
             nodeOrient = new Vector3[part.attachNodes.Count];
             for (int i = 0; i < part.attachNodes.Count; i++)
             {
-                if (part.attachNodes[i].attachedPart != null) continue;
+                //if (part.attachNodes[i].attachedPart != null) continue;
 
                 //Check to make sure nodeOrient is pointing out
                 nodeOrient[i] = part.attachNodes[i].orientation;
                 nodeOffset = part.attachNodes[i].offset;
-                nodeCheck = new Ray(nodeOffset * 1.01f, nodeOrient[i]);
+                nodeCheck = new Ray(nodeOffset, nodeOrient[i]);
 
-                hits = Physics.RaycastAll(nodeCheck, 10);
+                hits = Physics.RaycastAll(nodeCheck, float.PositiveInfinity);
+                //Debug.Log("Node reversal raycast hits: " + hits.Length);
+                if (hits.Length > 0) Debug.Log("HIT!");
+
                 for(int j = 0; j < hits.Length; j++)
                 {
                     // if the ray hit the part, reverse the normal
-                    if (hits[j].collider == part.collider)  //may need to add hit.rigidbody != null
+                    if (hits[j].rigidbody == part.rigidbody)// && hits[j].collider == part.collider)  //may need to add hit.rigidbody != null
                     {
                         nodeOrient[i] = -nodeOrient[i];
                         Debug.Log("Reversed node " + i + " on part " + part.name);
@@ -253,9 +265,9 @@ namespace RealHeat
             //Get ControlSys module
             ctrlSys = null;
 
-            if(part.Modules.Contains("FARControlSys"))
+            if(part.GetComponent<FARControlSys>() == null)
             {
-                ctrlSys = (FARControlSys)part.Modules["FARControlSys"];
+                ctrlSys = (FARControlSys)part.GetComponent<FARControlSys>();
             }
 
             for(int i = 0; i < part.vessel.parts.Count && ctrlSys == null; i++)
@@ -323,10 +335,18 @@ namespace RealHeat
             displayLOut = (float)Lref;
         }
 
-        private double calcAOA()
+        //fixme remove trycatch
+        private void calcAOA()
         {
+
             orientation = part.transform.localToWorldMatrix.MultiplyVector(vabUp);
-            return Vector3.Angle(velocity, orientation);
+            aoa = Vector3.Angle(velocity, orientation);
+
+            maxTurnAngle = Math.Asin(FARAeroUtil.CalculateSinMaxShockAngle(ctrlSys.MachNumber, 1.4)) * 180.0 / Math.PI;//fix gamma
+            hasNShock = aoa > maxTurnAngle && (180-aoa)>maxTurnAngle; //check for normal/bow shock
+
+            displayShockOut = hasNShock;
+
         }
 
         //public bool IsShielded(Vector3 direction)
@@ -349,15 +369,16 @@ namespace RealHeat
                 inAtmo = true;
                 shockwave = (double)RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(speed);
                 Cp = RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(speed); // FIXME should be based on adjustedAmbient
-                frontalArea = Sref * Cd;
-                leeArea = Sref - frontalArea;
+
+                //frontalArea = Sref * Cd;
+                //leeArea = Sref - frontalArea;
             }
             else
             {
                 shockwave = 0;
                 Cp = 1.4;
-                frontalArea = Sref;
-                leeArea = 0;
+                //frontalArea = Sref;
+                //leeArea = 0;
             }
             //if (getShieldedState())
             //    adjustedAmbient = part.temperature + CTOK; // FIXME: Change to the fairing part's temperature
@@ -368,6 +389,7 @@ namespace RealHeat
             //        adjustedAmbient = shockwave + ambient;
             fluxIn = 0.0;
             fluxOut = 0.0;
+            calcAOA();
         }
 
         public float CalculateTemperatureDelta()
@@ -382,6 +404,11 @@ namespace RealHeat
         {
             if ((object)vessel == null || (object)vessel.flightIntegrator == null)
                 return;
+
+            if(ctrlSys == null)
+            {
+                Start();
+            }
 
             if (is_debugging != RealHeatUtils.debugging)
             {
@@ -404,33 +431,13 @@ namespace RealHeat
             // get mass for thermal calculations
             if (shieldMass <= 0)
             {
-                if (part.rb != null)
-                    mass = part.rb.mass;
+                if (part.rb != null) mass = part.rb.mass;
                 mass = Math.Max(part.mass, mass) + MASSEPSILON;
             }
             else
+            {
                 mass = shieldMass + MASSEPSILON;
-
-            // get Cd and surface area from FAR if we can, else use crazy stock stuff
-            //if (hasFAR)
-            //{
-            //    try
-            //    {
-            //        Cd = ((double)(fiCd.GetValue(FARPartModule)));
-            //        Sref = ((double)(fiS.GetValue(FARPartModule)));
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        Debug.Log("[RH]: error getting drag area" + e.Message);
-            //        Sref = mass * 8;
-            //        Cd = 0.2;
-            //    }
-            //}
-            //else
-            //{
-            //    Sref = mass * 8;
-            //    Cd = 0.2;
-            //}
+            }
 
             // if too soon, abort.
             if (counter < 5.0)
@@ -439,32 +446,34 @@ namespace RealHeat
                 return;
             }
 
+
             CalculateParameters();
+
 
             fluxIn = 0.0;
             fluxOut = 0.0;
 
             //ManageHeatConduction();
-            //ManageHeatConvection(velocity);
+            ManageHeatConvection(velocity);
             //ManageHeatRadiation();
             //ManageHeatAblation();
             //ManageSolarHeat();
 
-            //fluxIn *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
+            fluxIn *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
             //fluxOut *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
 
-            //temperatureDelta = CalculateTemperatureDelta();
-            //part.temperature += temperatureDelta;
-            
-            //if (part.temperature < -253) // clamp to 20K
-            //    part.temperature = -253;
+            temperatureDelta = CalculateTemperatureDelta();
+            part.temperature += temperatureDelta;
+
+            if (part.temperature < -253) // clamp to 20K
+                part.temperature = -253;
 
             displayFluxIn = (float)fluxIn;
             displayFluxOut = (float)fluxOut;
             displayShockwave = (ambient + shockwave - CTOK).ToString("F0") + "C";
             displayAmbient = (ambient - CTOK).ToString("F0") + "C";
             displayTemperature = part.temperature;
-            displayAOAOut = (float)calcAOA();
+            displayAOAOut = (float)aoa;
         }
 
         public void HeatExchange(Part p)
@@ -587,24 +596,72 @@ namespace RealHeat
         {
             if (inAtmo)
             {
+                //getNodeOrientations();
+                #region oldConvCode
                 // convective heating in atmosphere
                 //double baseFlux = RealHeatUtils.heatMultiplier * Cp * Math.Sqrt(speed) * Math.Sqrt(density);
                 //fluxIn += baseFlux * frontalArea * (adjustedAmbient - temperature);
                 //fluxIn += baseFlux * leeArea * (ambient + (adjustedAmbient - ambient) * leeConst - temperature);
 
-                double refL = 2 * Math.Sqrt(Sref) / 3.1415926535;
-                double Re = speed * density * refL / (15.97 * .000001);
-                double Cf = 1.328 / Math.Sqrt(Re);
-                displayReOut = (float)Re;
+                //double refL = 2 * Math.Sqrt(Sref) / 3.1415926535;
+                //double Re = speed * density * refL / (15.97 * .000001);
+                //double Cf = 1.328 / Math.Sqrt(Re);
+                //displayReOut = (float)Re;
 
-                double Nu = .037 * Math.Pow(Re, 0.8) * Math.Pow(0.7, 1.0 / 3.0);
-                double h = Nu / refL * .3; //W/m^2
-                displayHOut = (float)h*.001f;
+                //double Nu = .037 * Math.Pow(Re, 0.8) * Math.Pow(0.7, 1.0 / 3.0);
+                //double h = Nu / refL * .3; //W/m^2
+                //displayHOut = (float)h*.001f;
 
-                fluxIn += h * (shockwave + ambient - temperature) * Sref;
+                //fluxIn += h * (shockwave + ambient - temperature) * Sref;
 
                 //fluxIn += density * Math.Pow(speed, 3) * S * Cf / 4;
                 //displayCfOut = (float)Cf;
+                #endregion
+
+                //nodal heating
+                Vector3 worldNodeOrient = Vector3.zero; //transform vab orientation to world
+                double nodeAOA = 0.0; //AOA of node normal
+                double Re = 0.0; //Reynolds Number
+                double Nu = 0.0; //Nusselt Number
+                double Pr = 0.7; //Prandtl Number
+                double h = 0.0; //heat transfer coefficient (W/(m^2*K))
+
+                displayNodeShockOut = 0;
+                for(int i = 0; i < part.attachNodes.Count; i++)
+                {
+                    if (part.attachNodes[i].attachedPart != null) continue; //if part is attached to something, ignore conv. heating
+
+                    worldNodeOrient = part.transform.localToWorldMatrix.MultiplyVector(nodeOrient[i]);
+                    nodeAOA = Vector3.Angle(velocity, worldNodeOrient);
+                    //Debug.Log("node" + i + "aoa: " + nodeAOA);
+
+                    if (nodeAOA > (90 - maxTurnAngle)) continue; //if no normal shock, continue
+
+                    displayNodeShockOut++;
+
+                    Re = part.attachNodes[i].radius * speed * density / (viscosity);
+                    Nu = .037 * Math.Pow(Re, 0.8) * Math.Pow(Pr, 1 / 3); //turbulent nusselt
+
+                    h = Nu*atmoConductivity/part.attachNodes[i].radius;
+                    fluxIn += h * (part.attachNodes[i].radius * part.attachNodes[i].radius * Math.PI)
+                        * (shockwave + ambient - temperature); //flux = h*A*dT
+                }
+
+                Re = Lref * speed * density / viscosity;
+                Nu = .037 * Math.Pow(Re, 0.8) * Math.Pow(Pr, 1 / 3); //turbulent nusselt
+                if (Re < 2000.0 && !hasNShock) Nu = .332 * Math.Sqrt(Re) * Math.Pow(Pr, 1 / 3); //laminar nusselt
+                h = Nu * atmoConductivity / Lref; //heat transfer coeff (W/(m^2*K)
+
+                if(hasNShock)
+                {
+                    fluxIn += h * Sref * (shockwave + ambient - temperature);
+                }
+                else
+                {
+                    fluxIn += h * Sref * (ambient - temperature);
+                }
+
+
             }
             else
             {
