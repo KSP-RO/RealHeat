@@ -37,23 +37,32 @@ namespace RealHeat
         [KSPField(isPersistant = false, guiActive = true, guiName = "Temperature", guiUnits = "C", guiFormat = "F0")]
         public float displayTemperature;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
         public float displayFluxIn;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux Out", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Flux Out", guiUnits = "kW/m^2", guiFormat = "N3")]
         public float displayFluxOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Re", guiUnits = "", guiFormat = "E3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Re", guiUnits = "", guiFormat = "E3")]
         public float displayReOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "h", guiUnits = "kW/(m^2*K)", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "h", guiUnits = "kW/(m^2*K)", guiFormat = "N3")]
         public float displayHOut;
 
         [KSPField(isPersistant = false, guiActive = false, guiName = "Cf", guiUnits = "", guiFormat = "F3")]
         public float displayCfOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Ablation Rate", guiUnits = "", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Ablation Rate", guiUnits = "", guiFormat = "F3")]
         public float displayLossOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "AOA", guiUnits = " deg", guiFormat = "E3")]
+        public float displayAOAOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Ref. Area", guiUnits = " m^2", guiFormat = "E3")]
+        public float displaySOut;
+
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Ref. Length", guiUnits = " m", guiFormat = "E3")]
+        public float displayLOut;
 
         [KSPField(isPersistant = true)]
         public float adjustCollider = 0;
@@ -127,7 +136,8 @@ namespace RealHeat
         protected double adjustedAmbient; // shockwave temperature experienced by the part(K)
         protected double Cp; // specific heat
         protected double Cd = 0.2; // Drag coefficient
-        public double S = 2; // surface area (m^2)
+        public double Sref = 2; // surface area (m^2)
+        public double Lref = 1; // reference length (diameter for flat plate, overall length for tanks, MAC for wings)
         protected double ballisticCoeff = 600; // kg/m^2
         protected double mass = 1; // mass this frame (tonnnes)
         protected double temperature = 0; // part tempterature this frame (K)
@@ -195,6 +205,7 @@ namespace RealHeat
             getFARModules();
             getNodeOrientations();
             vabUp = FARGeoUtil.GuessUpVector(part);
+            getPartProperties();
 
             if (ablative == null)
                 ablative = "None";
@@ -286,7 +297,36 @@ namespace RealHeat
 
         private void getPartProperties()
         {
-            
+            if(dragModel != null)
+            {
+                Sref = dragModel.S;
+                Lref = 2 * Math.Sqrt(Sref) / Math.PI;
+            }
+            else if (aeroModel != null)
+            {
+                Sref = aeroModel.S;
+                Lref = aeroModel.MAC;
+            }
+            else if(part.attachNodes.Count > 0)
+            {
+                Lref = part.attachNodes[0].radius;
+                Sref = Lref * Lref * Math.PI;
+            }
+            else
+            {
+                Lref = 1;
+                Sref = Math.PI;
+            }
+            mass = part.mass;
+
+            displaySOut = (float)Sref;
+            displayLOut = (float)Lref;
+        }
+
+        private double calcAOA()
+        {
+            orientation = part.transform.localToWorldMatrix.MultiplyVector(vabUp);
+            return Vector3.Angle(velocity, orientation);
         }
 
         //public bool IsShielded(Vector3 direction)
@@ -309,14 +349,14 @@ namespace RealHeat
                 inAtmo = true;
                 shockwave = (double)RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(speed);
                 Cp = RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(speed); // FIXME should be based on adjustedAmbient
-                frontalArea = S * Cd;
-                leeArea = S - frontalArea;
+                frontalArea = Sref * Cd;
+                leeArea = Sref - frontalArea;
             }
             else
             {
                 shockwave = 0;
                 Cp = 1.4;
-                frontalArea = S;
+                frontalArea = Sref;
                 leeArea = 0;
             }
             //if (getShieldedState())
@@ -372,25 +412,25 @@ namespace RealHeat
                 mass = shieldMass + MASSEPSILON;
 
             // get Cd and surface area from FAR if we can, else use crazy stock stuff
-            if (hasFAR)
-            {
-                try
-                {
-                    Cd = ((double)(fiCd.GetValue(FARPartModule)));
-                    S = ((double)(fiS.GetValue(FARPartModule)));
-                }
-                catch (Exception e)
-                {
-                    Debug.Log("[RH]: error getting drag area" + e.Message);
-                    S = mass * 8;
-                    Cd = 0.2;
-                }
-            }
-            else
-            {
-                S = mass * 8;
-                Cd = 0.2;
-            }
+            //if (hasFAR)
+            //{
+            //    try
+            //    {
+            //        Cd = ((double)(fiCd.GetValue(FARPartModule)));
+            //        Sref = ((double)(fiS.GetValue(FARPartModule)));
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Debug.Log("[RH]: error getting drag area" + e.Message);
+            //        Sref = mass * 8;
+            //        Cd = 0.2;
+            //    }
+            //}
+            //else
+            //{
+            //    Sref = mass * 8;
+            //    Cd = 0.2;
+            //}
 
             // if too soon, abort.
             if (counter < 5.0)
@@ -405,25 +445,26 @@ namespace RealHeat
             fluxOut = 0.0;
 
             //ManageHeatConduction();
-            ManageHeatConvection(velocity);
-            ManageHeatRadiation();
-            ManageHeatAblation();
+            //ManageHeatConvection(velocity);
+            //ManageHeatRadiation();
+            //ManageHeatAblation();
             //ManageSolarHeat();
 
-            fluxIn *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
-            fluxOut *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
+            //fluxIn *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
+            //fluxOut *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
 
-            temperatureDelta = CalculateTemperatureDelta();
-            part.temperature += temperatureDelta;
+            //temperatureDelta = CalculateTemperatureDelta();
+            //part.temperature += temperatureDelta;
             
-            if (part.temperature < -253) // clamp to 20K
-                part.temperature = -253;
+            //if (part.temperature < -253) // clamp to 20K
+            //    part.temperature = -253;
 
             displayFluxIn = (float)fluxIn;
             displayFluxOut = (float)fluxOut;
             displayShockwave = (ambient + shockwave - CTOK).ToString("F0") + "C";
             displayAmbient = (ambient - CTOK).ToString("F0") + "C";
             displayTemperature = part.temperature;
+            displayAOAOut = (float)calcAOA();
         }
 
         public void HeatExchange(Part p)
@@ -439,108 +480,108 @@ namespace RealHeat
             // do nothing, since it's all handled by other stuff
         }
 
-        public void ManageHeatConduction()
-        {
-            /***
-             * this isn't quite realistic.
-             * We're essentially modelling a part as a series of tubes.
-             * Each attachNode is connected to the part's Center of Mass
-             * by a solid cylinder with a diameter equal to the attachNode's
-             * size (0 = 0.625m, 1 = 1.25m, 2 = 2.5m, etc.); heat flows through
-             * each of those cylinders to equalize with part.Temperature,
-             * which is the temperature at the part's CoM.
-             * It's not very precise, but it's better than stock.
-             * 
-             ***/
-            if (part.heatConductivity > 0f)
-            { // take over heat management from KSP
-                heatConductivity = part.heatConductivity;
-                part.heatConductivity = 0f;
-            }
-            else if (heatConductivity == 0f)
-                return;
+        //public void ManageHeatConduction()
+        //{
+        //    /***
+        //     * this isn't quite realistic.
+        //     * We're essentially modelling a part as a series of tubes.
+        //     * Each attachNode is connected to the part's Center of Mass
+        //     * by a solid cylinder with a diameter equal to the attachNode's
+        //     * size (0 = 0.625m, 1 = 1.25m, 2 = 2.5m, etc.); heat flows through
+        //     * each of those cylinders to equalize with part.Temperature,
+        //     * which is the temperature at the part's CoM.
+        //     * It's not very precise, but it's better than stock.
+        //     * 
+        //     ***/
+        //    if (part.heatConductivity > 0f)
+        //    { // take over heat management from KSP
+        //        heatConductivity = part.heatConductivity;
+        //        part.heatConductivity = 0f;
+        //    }
+        //    else if (heatConductivity == 0f)
+        //        return;
 
-            float accumulatedExchange = 0f;
-            //string logLine = "Part: " + part.name + " (temp " + part.temperature.ToString() + " / conductivity " + heatConductivity.ToString() + ")";
-            List<Part> partsToProcess = new List<Part>(part.children);
-            if (part.parent != null)
-                partsToProcess.Add(part.parent);
+        //    float accumulatedExchange = 0f;
+        //    //string logLine = "Part: " + part.name + " (temp " + part.temperature.ToString() + " / conductivity " + heatConductivity.ToString() + ")";
+        //    List<Part> partsToProcess = new List<Part>(part.children);
+        //    if (part.parent != null)
+        //        partsToProcess.Add(part.parent);
 
-            foreach (AttachNode node in part.attachNodes)
-            {
-                float radius2 = node.size * node.size;
-                if (node.size == 0)
-                    radius2 = 0.25f;
-                //logLine += ("\n +-Node: " + node.id + " [" + node.size + "m] ");
-                float cFactor = radius2 * heatConductivity;
-                if (part.transform != null)
-                {
-                    if (!nodeArea.ContainsKey(node.id))
-                        nodeArea.Add(node.id, temperature);
-                    //logLine += " temp " + nodeArea[node.id];
+        //    foreach (AttachNode node in part.attachNodes)
+        //    {
+        //        float radius2 = node.size * node.size;
+        //        if (node.size == 0)
+        //            radius2 = 0.25f;
+        //        //logLine += ("\n +-Node: " + node.id + " [" + node.size + "m] ");
+        //        float cFactor = radius2 * heatConductivity;
+        //        if (part.transform != null)
+        //        {
+        //            if (!nodeArea.ContainsKey(node.id))
+        //                nodeArea.Add(node.id, temperature);
+        //            //logLine += " temp " + nodeArea[node.id];
 
-                    float d = 1f + (part.transform.position - node.position).magnitude;
-                    float exchange = cFactor * ((float)temperature - (float)nodeArea[node.id]) / d;
-                    accumulatedExchange -= exchange;
-                    nodeArea[node.id] += exchange;
+        //            float d = 1f + (part.transform.position - node.position).magnitude;
+        //            float exchange = cFactor * ((float)temperature - (float)nodeArea[node.id]) / d;
+        //            accumulatedExchange -= exchange;
+        //            nodeArea[node.id] += exchange;
 
-                    Part p = node.attachedPart;
-                    if (p != null && p.isAttached && part.isAttached)
-                    {
-                        //logLine += " - " + p.name;
-                        partsToProcess.Remove(p);
-                        AttachNode otherNode = p.findAttachNodeByPart(part);
-                        if (otherNode == null)
-                        {   // TODO: Find the nearest two nodes and compute the average temperature.
-                            // for now, we'll just exchange directly with the part's CoM.
-                            float cFactor2 = radius2 * TimeWarp.fixedDeltaTime;
-                            float deltaT = ((float)nodeArea[node.id] - (p.temperature + (float)CTOK));
-                            nodeArea[node.id] += deltaT * cFactor2 * heatConductivity * 4f;
-                            p.temperature -= deltaT * cFactor2 * heatConductivity * 4f;
-                        }
-                        else
-                        {
-                            //logLine += " (Node: " + otherNode.id + " + [" + otherNode.size + "m]) ";
-                            ModuleRealHeat heatModule = (ModuleRealHeat)p.Modules["ModuleRealHeat"];
-                            if (heatModule == null)
-                            {
-                                // something has gone VERY wrong.
-                                Debug.Log("   !!! NO HEAT MODULE");
-                            }
-                            else if (heatModule.heatConductivity > 0f)
-                            {
-                                if (!heatModule.nodeArea.ContainsKey(otherNode.id))
-                                    heatModule.nodeArea.Add(otherNode.id, p.temperature);
-                                if (otherNode.size < node.size)
-                                {
-                                    radius2 = otherNode.size * otherNode.size;
-                                    if (otherNode.size == 0)
-                                        radius2 = 0.25f;
-                                }
-                                float cFactor2 = radius2 * TimeWarp.fixedDeltaTime;
+        //            Part p = node.attachedPart;
+        //            if (p != null && p.isAttached && part.isAttached)
+        //            {
+        //                //logLine += " - " + p.name;
+        //                partsToProcess.Remove(p);
+        //                AttachNode otherNode = p.findAttachNodeByPart(part);
+        //                if (otherNode == null)
+        //                {   // TODO: Find the nearest two nodes and compute the average temperature.
+        //                    // for now, we'll just exchange directly with the part's CoM.
+        //                    float cFactor2 = radius2 * TimeWarp.fixedDeltaTime;
+        //                    float deltaT = ((float)nodeArea[node.id] - (p.temperature + (float)CTOK));
+        //                    nodeArea[node.id] += deltaT * cFactor2 * heatConductivity * 4f;
+        //                    p.temperature -= deltaT * cFactor2 * heatConductivity * 4f;
+        //                }
+        //                else
+        //                {
+        //                    //logLine += " (Node: " + otherNode.id + " + [" + otherNode.size + "m]) ";
+        //                    ModuleRealHeat heatModule = (ModuleRealHeat)p.Modules["ModuleRealHeat"];
+        //                    if (heatModule == null)
+        //                    {
+        //                        // something has gone VERY wrong.
+        //                        Debug.Log("   !!! NO HEAT MODULE");
+        //                    }
+        //                    else if (heatModule.heatConductivity > 0f)
+        //                    {
+        //                        if (!heatModule.nodeArea.ContainsKey(otherNode.id))
+        //                            heatModule.nodeArea.Add(otherNode.id, p.temperature);
+        //                        if (otherNode.size < node.size)
+        //                        {
+        //                            radius2 = otherNode.size * otherNode.size;
+        //                            if (otherNode.size == 0)
+        //                                radius2 = 0.25f;
+        //                        }
+        //                        float cFactor2 = radius2 * TimeWarp.fixedDeltaTime;
 
-                                float deltaT = ((float)heatModule.nodeArea[otherNode.id] - (float)nodeArea[node.id]);
+        //                        float deltaT = ((float)heatModule.nodeArea[otherNode.id] - (float)nodeArea[node.id]);
 
-                                nodeArea[node.id] += deltaT * cFactor2 * (heatConductivity + heatModule.heatConductivity);
-                                heatModule.nodeArea[otherNode.id] -= deltaT * cFactor2 * (heatConductivity + heatModule.heatConductivity);
-                                //logLine += "flow: " + (deltaT * cFactor2).ToString();
-                            }
-                        }
-                    }
-                }
-                //Debug.Log(logLine + "\n");
-            }
+        //                        nodeArea[node.id] += deltaT * cFactor2 * (heatConductivity + heatModule.heatConductivity);
+        //                        heatModule.nodeArea[otherNode.id] -= deltaT * cFactor2 * (heatConductivity + heatModule.heatConductivity);
+        //                        //logLine += "flow: " + (deltaT * cFactor2).ToString();
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        //Debug.Log(logLine + "\n");
+        //    }
 
-            fluxIn = accumulatedExchange;
+        //    fluxIn = accumulatedExchange;
 
-            foreach (Part p in partsToProcess)
-            {
-                if (p.isAttached)
-                {
-                    //HeatExchange(p);
-                }
-            }
-        }
+        //    foreach (Part p in partsToProcess)
+        //    {
+        //        if (p.isAttached)
+        //        {
+        //            //HeatExchange(p);
+        //        }
+        //    }
+        //}
 
         public void ManageHeatConvection(Vector3 velocity)
         {
@@ -551,7 +592,7 @@ namespace RealHeat
                 //fluxIn += baseFlux * frontalArea * (adjustedAmbient - temperature);
                 //fluxIn += baseFlux * leeArea * (ambient + (adjustedAmbient - ambient) * leeConst - temperature);
 
-                double refL = 2 * Math.Sqrt(S) / 3.1415926535;
+                double refL = 2 * Math.Sqrt(Sref) / 3.1415926535;
                 double Re = speed * density * refL / (15.97 * .000001);
                 double Cf = 1.328 / Math.Sqrt(Re);
                 displayReOut = (float)Re;
@@ -560,7 +601,7 @@ namespace RealHeat
                 double h = Nu / refL * .3; //W/m^2
                 displayHOut = (float)h*.001f;
 
-                fluxIn += h * (shockwave + ambient - temperature) * S;
+                fluxIn += h * (shockwave + ambient - temperature) * Sref;
 
                 //fluxIn += density * Math.Pow(speed, 3) * S * Cf / 4;
                 //displayCfOut = (float)Cf;
@@ -580,7 +621,7 @@ namespace RealHeat
             if (inAtmo)
                 retval *= 1 - (density * 0.31020408163265306122448979591837); // 7-900W at sea level     this factor is 0.38 / 1.225 to achieve that power from radiation
             retval *= SOLARLUM / (4 * Math.PI * distance);
-            fluxIn += S * 0.5 * retval;
+            fluxIn += Sref * 0.5 * retval;
             //Debug.Log("Part: " + part.name + "Solar; Flux out: " + fluxOut + " Flux in: " + fluxIn);
         }
 
@@ -608,7 +649,7 @@ namespace RealHeat
             temperatureVal *= temperatureVal;
             temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
 
-            fluxOut += (S - shieldArea) * temperatureVal * emissiveConst * SIGMA;
+            fluxOut += (Sref - shieldArea) * temperatureVal * emissiveConst * SIGMA;
             if (hasShield)
                 fluxOut += shieldArea * temperatureVal * shieldEmissiveConst * SIGMA;
 
