@@ -37,10 +37,10 @@ namespace RealHeat
         [KSPField(isPersistant = false, guiActive = true, guiName = "Temperature", guiUnits = "C", guiFormat = "F0")]
         public float displayTemperature;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux In", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux In", guiUnits = "kW", guiFormat = "N3")]
         public float displayFluxIn;
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Flux Out", guiUnits = "kW/m^2", guiFormat = "N3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Flux Out", guiUnits = "kW", guiFormat = "E3")]
         public float displayFluxOut;
 
         [KSPField(isPersistant = false, guiActive = false, guiName = "Re", guiUnits = "", guiFormat = "E3")]
@@ -52,22 +52,22 @@ namespace RealHeat
         [KSPField(isPersistant = false, guiActive = false, guiName = "Cf", guiUnits = "", guiFormat = "F3")]
         public float displayCfOut;
 
-        [KSPField(isPersistant = false, guiActive = false, guiName = "Ablation Rate", guiUnits = "", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = true, guiName = "Ablation Rate", guiUnits = "", guiFormat = "F3")]
         public float displayLossOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "AOA", guiUnits = " deg", guiFormat = "F3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "AOA", guiUnits = " deg", guiFormat = "F3")]
         public float displayAOAOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Ref. Area", guiUnits = " m^2", guiFormat = "E3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Ref. Area", guiUnits = " m^2", guiFormat = "E3")]
         public float displaySOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Ref. Length", guiUnits = " m", guiFormat = "E3")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Ref. Length", guiUnits = " m", guiFormat = "E3")]
         public float displayLOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Shock?", guiUnits = " ", guiFormat = "G")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Shock?", guiUnits = " ", guiFormat = "G")]
         public bool displayShockOut;
 
-        [KSPField(isPersistant = false, guiActive = true, guiName = "Node Shock?", guiUnits = " ", guiFormat = "E2")]
+        [KSPField(isPersistant = false, guiActive = false, guiName = "Node Shock?", guiUnits = " ", guiFormat = "E2")]
         public int displayNodeShockOut;
 
         [KSPField(isPersistant = true)]
@@ -129,7 +129,7 @@ namespace RealHeat
         public float heatCapacity = 480f; // in J/kg-K, use default for stainless steel
 
         [KSPField(isPersistant = true)]
-        public float emissiveConst = 0; // coefficient for emission
+        public float emissiveConst = 0.9f; // coefficient for emission
         #endregion
 
         // per-frame shared members
@@ -158,7 +158,7 @@ namespace RealHeat
         protected double atmoConductivity = 0.3; //W/(m*K)
 
         public const double CTOK = 273.15; // convert Celsius to Kelvin
-        public const double SIGMA = 5.670373e-8; // Stefan–Boltzmann constant
+        public const double SIGMA = 5.670373e-8; // Stefan–Boltzmann constant (W/(m^2*K^4))
         public const double AIREMISS = 0.3;
         public const double MASSEPSILON = 1e-20; // small value to offset mass calcs just in case
 
@@ -216,8 +216,15 @@ namespace RealHeat
             vabUp = FARGeoUtil.GuessUpVector(part);
             getPartProperties();
 
-            if (ablative == null)
+            if (!part.Modules.Contains("ModuleHeatShield"))
+            {
                 ablative = "None";
+            }
+            else
+            {
+                Debug.Log("Ablative found on part " + part.name);
+            }
+                
 
             // calculate Solar luminosity
             // FIXME: get actual distance from sun.
@@ -227,9 +234,11 @@ namespace RealHeat
                 SOLARLUM = SOLARCONST * Math.Pow(FlightGlobals.Bodies[1].referenceBody.orbit.semiMajorAxis, 2) * 4 * Math.PI;
         }
 
+        //NOTES: this may not work with all types of models, such as hollow cargo bays, etc.
+        //Will fix later.
         private void getNodeOrientations()
         {
-            Vector3 nodeOffset = Vector3.zero; //node offset from CoM
+            Vector3 nodePosition = Vector3.zero; //node offset from CoM
             Ray nodeCheck; //ray to check for colliders
             RaycastHit[] hits; //hits from raycast
 
@@ -240,20 +249,21 @@ namespace RealHeat
 
                 //Check to make sure nodeOrient is pointing out
                 nodeOrient[i] = part.attachNodes[i].orientation;
-                nodeOffset = part.attachNodes[i].offset;
-                nodeCheck = new Ray(nodeOffset, nodeOrient[i]);
+                nodePosition = part.attachNodes[i].position;
+                nodeCheck = new Ray(nodePosition, nodeOrient[i]);
 
                 hits = Physics.RaycastAll(nodeCheck, float.PositiveInfinity);
                 //Debug.Log("Node reversal raycast hits: " + hits.Length);
-                if (hits.Length > 0) Debug.Log("HIT!");
+                //if (hits.Length > 0) Debug.Log("HIT!");
 
+                nodeOrient[i] = -nodeOrient[i];
                 for(int j = 0; j < hits.Length; j++)
                 {
                     // if the ray hit the part, reverse the normal
-                    if (hits[j].rigidbody == part.rigidbody)// && hits[j].collider == part.collider)  //may need to add hit.rigidbody != null
+                    if (hits[j].collider == part.collider || hits[j].rigidbody == part.rigidbody)  //may need to add hit.rigidbody == part.rigidbody
                     {
                         nodeOrient[i] = -nodeOrient[i];
-                        Debug.Log("Reversed node " + i + " on part " + part.name);
+                        //Debug.Log("REALHEAT: Reversed node " + i + " on part " + part.name);
                         break;
                     }
                 } 
@@ -394,7 +404,7 @@ namespace RealHeat
 
         public float CalculateTemperatureDelta()
         {
-            double flux = fluxIn; // -fluxOut;
+            double flux = fluxIn -fluxOut;
             double multiplier = (mass - shieldMass) * heatCapacity + shieldMass * shieldHeatCapacity;
             //multiplier *= 1000; // convert J/kg K to kJ/t K results in everything cancelling nicely
             return (float)(flux / multiplier);
@@ -405,9 +415,10 @@ namespace RealHeat
             if ((object)vessel == null || (object)vessel.flightIntegrator == null)
                 return;
 
-            if(ctrlSys == null)
+            if(ctrlSys == null) //if control system is still null, try to find it again.
             {
                 Start();
+                return; //Loop back just to double check.
             }
 
             if (is_debugging != RealHeatUtils.debugging)
@@ -455,12 +466,12 @@ namespace RealHeat
 
             //ManageHeatConduction();
             ManageHeatConvection(velocity);
-            //ManageHeatRadiation();
-            //ManageHeatAblation();
+            ManageHeatRadiation();
+            ManageHeatAblation();
             //ManageSolarHeat();
 
             fluxIn *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
-            //fluxOut *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
+            fluxOut *= 0.001 * deltaTime; // convert to kW then to the amount of time passed
 
             temperatureDelta = CalculateTemperatureDelta();
             part.temperature += temperatureDelta;
@@ -706,17 +717,24 @@ namespace RealHeat
             temperatureVal *= temperatureVal;
             temperatureVal *= temperatureVal; //Doing it this way results in temp^4 very quickly
 
-            fluxOut += (Sref - shieldArea) * temperatureVal * emissiveConst * SIGMA;
-            if (hasShield)
-                fluxOut += shieldArea * temperatureVal * shieldEmissiveConst * SIGMA;
+            temperatureVal = temperatureVal * emissiveConst * SIGMA;
+
+            fluxOut += Sref * temperatureVal;
+            for (int i = 0; i < part.attachNodes.Count; i++)
+            {
+                if (part.attachNodes[i].attachedPart != null) continue;
+
+                fluxOut += part.attachNodes[i].radius * part.attachNodes[i].radius * Math.PI * temperatureVal;
+            }
+
+            //displayFluxOut = (float)temperatureVal;
 
             //Debug.Log("Part: " + part.name + "Radiation; Flux out: " + fluxOut + " Flux in: " + fluxIn);
         }
 
         public void ManageHeatAblation()
         {
-            double tempAbs = 0;
-            if (part.Resources.Contains(ablative) && lossExp > 0 && temperature > ablationTempThresh)
+            if (lossExp > 0 && temperature > ablationTempThresh && part.Resources.Contains(ablative))
             {
                 if (direction.magnitude == 0) // an empty vector means the shielding exists on all sides
                     dot = 1;
@@ -727,11 +745,10 @@ namespace RealHeat
                         dot = 0f;
                 }
 
-                tempAbs = part.temperature + CTOK;
                 double ablativeAmount = part.Resources[ablative].amount;
-                double loss = (double)lossConst * Math.Exp(-lossExp / tempAbs);// *Math.Pow(dot, 0.25);
+                double loss = (double)lossConst * Math.Exp(-lossExp / temperature);// *Math.Pow(dot, 0.25);
                 //displayLossOut = (float)loss;
-                displayLossOut = (tempAbs > ablationTempThresh) ? 1 : 0;
+                displayLossOut = (temperature > ablationTempThresh) ? 1 : 0;
                 loss *= ablativeAmount;
                 part.Resources[ablative].amount -= loss * deltaTime;
                 fluxOut += pyrolysisLoss * loss;
