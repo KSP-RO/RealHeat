@@ -120,7 +120,7 @@ namespace RealHeat
         public float lossConst = 0.1f;
 
         [KSPField(isPersistant = true)]
-        public float pyrolysisLoss = -1;
+        public float heatOfAblation = 2000.0f; //(J/kg)
 
         [KSPField(isPersistant = true)]
         public float ablationTempThresh = 573.15f; // temperature below which ablation is ignored (K)
@@ -736,14 +736,14 @@ namespace RealHeat
         {
             if (lossExp > 0 && temperature > ablationTempThresh && part.Resources.Contains(ablative))
             {
-                if (direction.magnitude == 0) // an empty vector means the shielding exists on all sides
-                    dot = 1;
-                else // check the angle between the shock front and the shield
-                {
-                    dot = -Vector3.Dot(velocity.normalized, part.transform.TransformDirection(direction).normalized);
-                    if (dot < 0f)
-                        dot = 0f;
-                }
+                //if (direction.magnitude == 0) // an empty vector means the shielding exists on all sides
+                //    dot = 1;
+                //else // check the angle between the shock front and the shield
+                //{
+                //    dot = -Vector3.Dot(velocity.normalized, part.transform.TransformDirection(direction).normalized);
+                //    if (dot < 0f)
+                //        dot = 0f;
+                //}
 
                 double ablativeAmount = part.Resources[ablative].amount;
                 double loss = (double)lossConst * Math.Exp(-lossExp / temperature);// *Math.Pow(dot, 0.25);
@@ -751,7 +751,7 @@ namespace RealHeat
                 displayLossOut = (temperature > ablationTempThresh) ? 1 : 0;
                 loss *= ablativeAmount;
                 part.Resources[ablative].amount -= loss * deltaTime;
-                fluxOut += pyrolysisLoss * loss;
+                fluxOut += heatOfAblation * loss;
             }
         }
 
