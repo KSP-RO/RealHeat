@@ -64,7 +64,7 @@ namespace RealHeat
             // Even if you don't lock down functionality, you should return true if your users 
             // can expect a future update to be available.
             //
-            return Versioning.version_major == 0 && Versioning.version_minor == 24 && Versioning.Revision == 2;
+            return Versioning.version_major == 0 && (Versioning.version_minor == 25 || Versioning.version_minor == 90);// && Versioning.Revision == 2;
 
             /*-----------------------------------------------*\
             | IMPLEMENTERS SHOULD NOT EDIT BEYOND THIS POINT! |
@@ -79,9 +79,9 @@ namespace RealHeat
 
             // TODO: Implement your own Unity compatibility check.
             //
-            if (Application.unityVersion.Equals("4.5.2f1"))
+            //if (Application.unityVersion.Equals("4.5.2f1"))
                 return true;
-            return false;
+            //return false;
 
             /*-----------------------------------------------*\
             | IMPLEMENTERS SHOULD NOT EDIT BEYOND THIS POINT! |
