@@ -23,9 +23,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>True</Optimize>
-    <OutputPath>..\DeadlyReentry\Plugins\</OutputPath>
+    <OutputPath>..\RealHeat\Plugins\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -37,14 +37,16 @@
     </Compile>
     <Compile Include="AtmData.cs" />
     <Compile Include="AtmTempCurve.cs" />
-    <Compile Include="ModuleAnimation2Value.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RealDamage.cs" />
     <Compile Include="RealHeat.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\..\Games\KSP_win64\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ModularFlightIntegrator">
+      <HintPath>..\..\..\..\..\..\Games\KSP_1RP0\GameData\ModularFlightIntegrator\ModularFlightIntegrator.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
@@ -54,10 +56,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>rd /s /q ..\..\Source\bin
-rd /s /q ..\..\Source\obj
-del *.pdb
-del "System.Core.dll"</PostBuildEvent>
+    <PostBuildEvent>del "System.Core.dll"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

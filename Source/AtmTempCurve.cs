@@ -68,7 +68,7 @@ namespace RealHeat
         {
             lock (_locker)
             {
-                FileStream fs = File.Open(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/RealHeat/" + body.bodyName + "_T_vs_V_curve.csv", FileMode.Create, FileAccess.Write);
+                FileStream fs = File.Open(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/RealHeat/" + body.bodyName + "_Curves.csv", FileMode.Create, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
 
                 EvaluateTempDiffCurve(0);

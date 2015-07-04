@@ -30,7 +30,7 @@ namespace RealHeat
             {
                 foreach (ConfigNode gasSpeciesNode in node.GetNodes("GAS_SPECIES"))
                 {
-                    string id = gasSpeciesNode.GetValue("id");
+                    string id = gasSpeciesNode.GetValue("name");
                     AtmosphericGasSpecies newSpecies = new AtmosphericGasSpecies(id);
 
                     idOrganizedListOfGasSpecies.Add(id, newSpecies);
@@ -64,7 +64,7 @@ namespace RealHeat
                     newComposition.referenceTemperature = float.Parse(atmNode.GetValue("referenceTemperature"));
                     newComposition.maxSimVelocity = float.Parse(atmNode.GetValue("maxSimVelocity"));
 
-                    string bodyName = atmNode.GetValue("bodyName");
+                    string bodyName = atmNode.GetValue("name");
                     if (!FARFound)
                         GetFARNode();
 

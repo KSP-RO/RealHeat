@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("RealHeat")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("NathanKell")]
+[assembly: AssemblyCompany("NathanKell and ferram4")]
 [assembly: AssemblyProduct("RealHeat")]
-[assembly: AssemblyCopyright("Copyright © 2014")]
+[assembly: AssemblyCopyright("Copyright © 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("2f03aff1-574f-4458-b8be-cbab3eed837c")]
+[assembly: Guid("2f03aff1-574f-4458-b8ce-cbab3eed837c")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -35,3 +35,6 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion("0.1.*")]
 [assembly: AssemblyFileVersion("0.1.0.0")]
+
+[assembly: KSPAssembly("RealHeat", 1, 0)]
+[assembly: KSPAssemblyDependency("ModularFlightIntegrator", 1, 0)]
