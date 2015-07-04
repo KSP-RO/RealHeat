@@ -46,7 +46,7 @@ namespace RealHeat
                 // reset background temps
                 fi.backgroundRadiationTemp = CalculateBackgroundRadiationTemperature(fi.atmosphericTemperature, fi.DensityThermalLerp);
                 fi.backgroundRadiationTempExposed = CalculateBackgroundRadiationTemperature(fi.externalTemperature, fi.DensityThermalLerp);
-                print("At rho " + fi.density + "/" + shockDensity + ", gamma/Cp/R " + gamma + "/" + Cp + "/" + R + ", DTL " + fi.DensityThermalLerp + ", BT = " + fi.backgroundRadiationTempExposed.ToString("N2") + "/" + fi.backgroundRadiationTemp.ToString("N2"));
+                //print("At rho " + fi.density + "/" + shockDensity + ", gamma/Cp/R " + gamma + "/" + Cp + "/" + R + ", DTL " + fi.DensityThermalLerp + ", BT = " + fi.backgroundRadiationTempExposed.ToString("N2") + "/" + fi.backgroundRadiationTemp.ToString("N2"));
             }
         }
 
