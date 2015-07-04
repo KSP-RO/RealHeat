@@ -79,8 +79,8 @@ namespace RealHeat
 
             // TODO: Implement your own Unity compatibility check.
             //
-            if (Application.unityVersion.Equals("4.5.2f1"))
-                return true;
+            /*if (Application.unityVersion.Equals("4.5.2f1"))
+                return true;*/
             return false;
 
             /*-----------------------------------------------*\
