@@ -16,8 +16,8 @@ namespace RealHeat
 
         public static void GetFARNode()
         {
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("FARAeroData"))
-                FARAeroData = node;
+            /*foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("FARAeroData"))
+                FARAeroData = node;*/
 
             FARFound = true;
         }
@@ -73,7 +73,7 @@ namespace RealHeat
                         CelestialBody body = FlightGlobals.Bodies[idx];
                         if(body.name == bodyName)
                         {
-                            bool found = false;
+                            /*bool found = false;
                             if ((object)FARAeroData != null)
                             {
                                 foreach(ConfigNode bodyNode in FARAeroData.nodes)
@@ -108,7 +108,9 @@ namespace RealHeat
                                 newComposition.gasConstant = (float)((double)(AtmosphericGasSpecies.UniversalGasConstant) / weight);
                                 newComposition.specHeatRatio = (float)gamma;
 
-                            }
+                            }*/
+                            newComposition.specHeatRatio = (float)body.atmosphereAdiabaticIndex;
+                            newComposition.gasConstant = (float)((double)(AtmosphericGasSpecies.UniversalGasConstant) / (body.atmosphereMolarMass * 1000d));
                             bodyOrganizedListOfAtmospheres.Add(body, newComposition);
                             break;
                         }
@@ -155,7 +157,7 @@ namespace RealHeat
             }
             catch (Exception e)
             {
-                Debug.LogError("DRE Exception in Temperature Curve Calculation: " + e.StackTrace);
+                Debug.LogError("RealHeat: Exception in Temperature Curve Calculation: " + e.StackTrace);
             }
             AtmTempCurve.recalculatingCurve = false;
         }
