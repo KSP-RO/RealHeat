@@ -149,6 +149,7 @@ namespace RealHeat
                 container.callingCurve.protoTempCurve = result.temp;
                 container.callingCurve.protoVelCpCurve = result.cp;
                 container.callingCurve.referenceTemp = GetReferenceTemp(container.body);
+                container.callingCurve.specificGasConstant = atmosphere.gasConstant;
                 if (container.dumpToText)
                     container.callingCurve.DumpToText(5, container.body);
             }
@@ -200,8 +201,9 @@ namespace RealHeat
 
         public Curves TemperatureAsFunctionOfVelocity(int stepsBetweenCurvePoints, float dVForIntegration, float maxVel)
         {
-            List<CurveData> tempVsVelCurve = new List<CurveData>();
+            List<CurveData> velTempCurve = new List<CurveData>();
             List<CurveData> velCpCurve = new List<CurveData>();
+            List<CurveData> velGammaCurve = new List<CurveData>();
 
             Dictionary<AtmosphericGasSpecies, float[]> workingGasSpeciesAndMassFractions = CreateWorkingGasSpeciesAndMassFractionDict();
 
@@ -216,6 +218,7 @@ namespace RealHeat
                 UpdateCompositionDueToDecomposition(workingGasSpeciesAndMassFractions, temp);
                 float Cp = CalculateCp(workingGasSpeciesAndMassFractions, temp);
                 float dCp_dt = Calculate_dCp_dt(workingGasSpeciesAndMassFractions, temp);
+                float Cv = Cp - 0f;
                 float energyChange = CalculateEnergyLostThroughDecomposition(workingGasSpeciesAndMassFractions, temp);
 
                 float dT_dV = Cp + dCp_dt * temp + energyChange;
@@ -225,7 +228,7 @@ namespace RealHeat
                 //float dCp_dV = (Cp - oldCp) / dVForIntegration;
                 if (i <= stepsBetweenCurvePoints)
                 {
-                    tempVsVelCurve.Add(new CurveData(velocity, temp - referenceTemperature, dT_dV));
+                    velTempCurve.Add(new CurveData(velocity, temp - referenceTemperature, dT_dV));
                     velCpCurve.Add(new CurveData(velocity, Cp, dCp_dV));
                 }
 
@@ -237,7 +240,7 @@ namespace RealHeat
             }
             //Debug.Log(debug.ToString());
             Curves retval = new Curves();
-            retval.temp = tempVsVelCurve.ToArray();
+            retval.temp = velTempCurve.ToArray();
             retval.cp = velCpCurve.ToArray();
             return retval;
         }
@@ -568,6 +571,7 @@ namespace RealHeat
     {
         public CurveData[] temp;
         public CurveData[] cp;
+        public CurveData[] gamma;
     }
 
     public class tempCurveDataContainer

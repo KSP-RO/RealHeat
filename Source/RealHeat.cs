@@ -34,7 +34,10 @@ namespace RealHeat
                 fi.Vessel.externalTemperature = fi.externalTemperature = fi.atmosphericTemperature + (double)RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(spd);
 
                 // get gamma
-                double gamma = (double)RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(spd);
+                double Cp = (double)RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(spd);
+                double R = (double)RealHeatUtils.baseTempCurve.specificGasConstant;
+                double Cv = Cp - R;
+                double gamma = Cp / Cv;
 
                 // change density lerp
                 fi.DensityThermalLerp = CalculateDensityThermalLerp(fi.density, fi.mach, gamma);
