@@ -40,30 +40,34 @@ namespace RealHeat
                 double gamma = Cp / Cv;
 
                 // change density lerp
-                fi.DensityThermalLerp = CalculateDensityThermalLerp(fi.density, fi.mach, gamma);
+                double shockDensity = GetShockDensity(fi.density, fi.mach, gamma);
+                fi.DensityThermalLerp = CalculateDensityThermalLerp(shockDensity);
 
                 // reset background temps
                 fi.backgroundRadiationTemp = CalculateBackgroundRadiationTemperature(fi.atmosphericTemperature, fi.DensityThermalLerp);
                 fi.backgroundRadiationTempExposed = CalculateBackgroundRadiationTemperature(fi.externalTemperature, fi.DensityThermalLerp);
+                print("At rho " + fi.density + "/" + shockDensity + ", gamma/Cp/R " + gamma + "/" + Cp + "/" + R + ", DTL " + fi.DensityThermalLerp + ", BT = " + fi.backgroundRadiationTempExposed.ToString("N2") + "/" + fi.backgroundRadiationTemp.ToString("N2"));
             }
         }
 
-        public static double CalculateDensityThermalLerp(double density, double mach, double gamma)
+        public static double GetShockDensity(double density, double mach, double gamma)
         {
-            double shockDensity = density;
-            // calculate rho behind shockwave
             if (mach > 1d)
             {
                 double M2 = mach * mach;
-                shockDensity = (gamma + 1d) * M2 / (2d + (gamma - 1d) * M2) * shockDensity;
+                density = (gamma + 1d) * M2 / (2d + (gamma - 1d) * M2) * density;
             }
+            return density;
+        }
 
+        public static double CalculateDensityThermalLerp(double density)
+        {
             // calculate lerp
-            if (shockDensity < 0.0625d)
-                return 1d - Math.Sqrt(Math.Sqrt(shockDensity));
-            if (shockDensity < 0.25d)
-                return 0.75d - Math.Sqrt(shockDensity);
-            return 0.0625d / shockDensity;
+            if (density < 0.0625d)
+                return 1d - Math.Sqrt(Math.Sqrt(density));
+            if (density < 0.25d)
+                return 0.75d - Math.Sqrt(density);
+            return 0.0625d / density;
         }
 
         public static double CalculateBackgroundRadiationTemperature(double ambientTemp, double densityThermalLerp)

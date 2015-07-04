@@ -20,7 +20,7 @@ namespace RealHeat
         public CurveData[] protoTempCurve = null;
         public FloatCurve velCpCurve = new FloatCurve();
         public CurveData[] protoVelCpCurve = null;
-        public float specificGasConstant = 287.1f;
+        public float specificGasConstant = 287.103f;
         public float referenceTemp = 300;
         private static readonly object _locker = new object();
         public static bool recalculatingCurve = false;

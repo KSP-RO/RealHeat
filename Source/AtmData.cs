@@ -149,7 +149,7 @@ namespace RealHeat
                 container.callingCurve.protoTempCurve = result.temp;
                 container.callingCurve.protoVelCpCurve = result.cp;
                 container.callingCurve.referenceTemp = GetReferenceTemp(container.body);
-                container.callingCurve.specificGasConstant = atmosphere.gasConstant;
+                container.callingCurve.specificGasConstant = GetGasConstant(container.body);
                 if (container.dumpToText)
                     container.callingCurve.DumpToText(5, container.body);
             }
