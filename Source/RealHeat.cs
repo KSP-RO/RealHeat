@@ -23,7 +23,7 @@ namespace RealHeat
             if (fi.CurrentMainBody != body)
             {
                 body = fi.CurrentMainBody;
-                RealHeatUtils.baseTempCurve.CalculateNewAtmTempCurve(body, true);
+                RealHeatUtils.baseTempCurve.CalculateNewAtmTempCurve(body, RealHeatUtils.debugging);
             }
 
             if (fi.staticPressurekPa > 0d)

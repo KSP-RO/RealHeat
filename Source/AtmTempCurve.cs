@@ -71,12 +71,13 @@ namespace RealHeat
                 FileStream fs = File.Open(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/RealHeat/" + body.bodyName + "_Curves.csv", FileMode.Create, FileAccess.Write);
                 StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
 
-                EvaluateTempDiffCurve(0);
+                EvaluateTempDiffCurve(0f);
+                EvaluateVelCpCurve(0f);
                 for (float v = 0; v < tempAdditionFromVelocity.maxTime; v += velIncrements)
                 {
                     float y = EvaluateTempDiffCurve(v) + referenceTemp;
                     float z = EvaluateVelCpCurve(v);
-                    string s = v.ToString() + ", " + y.ToString();
+                    string s = v.ToString() + ", " + y.ToString() + ", " + z.ToString();
                     sw.WriteLine(s);
                 }
 
