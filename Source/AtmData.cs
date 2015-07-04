@@ -55,7 +55,7 @@ namespace RealHeat
 
                     foreach (ConfigNode gasSpeciesNode in atmNode.GetNodes("GAS_SPECIES"))
                     {
-                        AtmosphericGasSpecies decompositionSpecies = AtmDataOrganizer.idOrganizedListOfGasSpecies[gasSpeciesNode.GetValue("id")];
+                        AtmosphericGasSpecies decompositionSpecies = AtmDataOrganizer.idOrganizedListOfGasSpecies[gasSpeciesNode.GetValue("name")];
 
                         float massFraction = float.Parse(gasSpeciesNode.GetValue("massFraction"));
                         newComposition.gasSpeciesAndMassFractions.Add(decompositionSpecies, massFraction);
@@ -405,7 +405,7 @@ namespace RealHeat
             {
                 foreach(ConfigNode gasSpeciesNode in node.GetNodes("GAS_SPECIES"))
                 {
-                    if (gasSpeciesNode.GetValue("id") == this.id)
+                    if (gasSpeciesNode.GetValue("name") == this.id)
                     {
                         Debug.Log("Loading '" + id + "' data");
                         ConfigNode thisNode = gasSpeciesNode;
@@ -428,7 +428,7 @@ namespace RealHeat
                         decompositionSpeciesWithFraction = new Dictionary<AtmosphericGasSpecies, float>();
                         foreach(ConfigNode decompositionGasSpeciesNode in thisNode.GetNodes("DECOMPOSITION_SPECIES"))
                         {
-                            AtmosphericGasSpecies decompositionSpecies = AtmDataOrganizer.idOrganizedListOfGasSpecies[decompositionGasSpeciesNode.GetValue("id")];
+                            AtmosphericGasSpecies decompositionSpecies = AtmDataOrganizer.idOrganizedListOfGasSpecies[decompositionGasSpeciesNode.GetValue("name")];
                             float massFraction = float.Parse(decompositionGasSpeciesNode.GetValue("massFraction"));
 
                             decompositionSpeciesWithFraction.Add(decompositionSpecies, massFraction);

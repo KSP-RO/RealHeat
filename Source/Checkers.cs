@@ -38,7 +38,7 @@ namespace RealHeat
     /**
      * This utility displays a warning with a list of mods that determine themselves
      * to be incompatible with the current running version of Kerbal Space Program.
-     * 
+     *
      * See this forum thread for details:
      * http://forum.kerbalspaceprogram.com/threads/65395-Voluntarily-Locking-Plugins-to-a-Particular-KSP-Version
      */
@@ -61,7 +61,7 @@ namespace RealHeat
             //        ...disable some features...
             //    }
             //
-            // Even if you don't lock down functionality, you should return true if your users 
+            // Even if you don't lock down functionality, you should return true if your users
             // can expect a future update to be available.
             //
             return Versioning.version_major == 1 && Versioning.version_minor == 0 && Versioning.Revision == 4;
@@ -79,9 +79,7 @@ namespace RealHeat
 
             // TODO: Implement your own Unity compatibility check.
             //
-            /*if (Application.unityVersion.Equals("4.5.2f1"))
-                return true;*/
-            return false;
+            return true;
 
             /*-----------------------------------------------*\
             | IMPLEMENTERS SHOULD NOT EDIT BEYOND THIS POINT! |
@@ -89,7 +87,7 @@ namespace RealHeat
         }
 
         // Version of the compatibility checker itself.
-        private static int _version = 3;
+        private static int _version = 4;
 
         public void Start()
         {
@@ -159,26 +157,46 @@ namespace RealHeat
             Array.Sort(incompatible);
             Array.Sort(incompatibleUnity);
 
-            String message = "Some installed mods may be incompatible with this version of Kerbal Space Program. Features may be broken or disabled. Please check for updates to the listed mods.";
+            String message = String.Empty;
 
-            if (incompatible.Length > 0)
+            if (IsWin64())
             {
-                Debug.LogWarning("[CompatibilityChecker] Incompatible mods detected: " + String.Join(", ", incompatible));
-                message += String.Format("\n\nThese mods are incompatible with KSP {0}.{1}.{2}:\n\n", Versioning.version_major, Versioning.version_minor, Versioning.Revision);
-                message += String.Join("\n", incompatible);
-            }
-
-            if (incompatibleUnity.Length > 0)
-            {
-                Debug.LogWarning("[CompatibilityChecker] Incompatible mods (Unity) detected: " + String.Join(", ", incompatibleUnity));
-                message += String.Format("\n\nThese mods are incompatible with Unity {0}:\n\n", Application.unityVersion);
-                message += String.Join("\n", incompatibleUnity);
+                message += "WARNING: You are using 64-bit KSP on Windows. This version of KSP is known to cause crashes. It's highly recommended that you use either 32-bit KSP on Windows or switch to Linux.";
             }
 
             if ((incompatible.Length > 0) || (incompatibleUnity.Length > 0))
             {
+                message += ((message == String.Empty) ? "Some" : "\n\nAdditionally, some") + " installed mods may be incompatible with this version of Kerbal Space Program. Features may be broken or disabled. Please check for updates to the listed mods.";
+
+                if (incompatible.Length > 0)
+                {
+                    Debug.LogWarning("[CompatibilityChecker] Incompatible mods detected: " + String.Join(", ", incompatible));
+                    message += String.Format("\n\nThese mods are incompatible with KSP {0}.{1}.{2}:\n\n", Versioning.version_major, Versioning.version_minor, Versioning.Revision);
+                    message += String.Join("\n", incompatible);
+                }
+
+                if (incompatibleUnity.Length > 0)
+                {
+                    Debug.LogWarning("[CompatibilityChecker] Incompatible mods (Unity) detected: " + String.Join(", ", incompatibleUnity));
+                    message += String.Format("\n\nThese mods are incompatible with Unity {0}:\n\n", Application.unityVersion);
+                    message += String.Join("\n", incompatibleUnity);
+                }
+            }
+
+            if ((incompatible.Length > 0) || (incompatibleUnity.Length > 0) || IsWin64())
+            {
                 PopupDialog.SpawnPopupDialog("Incompatible Mods Detected", message, "OK", true, HighLogic.Skin);
             }
+        }
+
+        public static bool IsWin64()
+        {
+            return (IntPtr.Size == 8) && (Environment.OSVersion.Platform == PlatformID.Win32NT);
+        }
+
+        public static bool IsAllCompatible()
+        {
+            return IsCompatible() && IsUnityCompatible() && !IsWin64();
         }
 
         private static IEnumerable<Type> getAllTypes()
