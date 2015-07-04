@@ -28,9 +28,12 @@ namespace RealHeat
 
             if (fi.staticPressurekPa > 0d)
             {
-                // evaluate curves
                 float spd = (float)fi.spd;
-                fi.externalTemperature = fi.atmosphericTemperature + (double)RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(spd);
+                
+                // set shock temperature
+                fi.Vessel.externalTemperature = fi.externalTemperature = fi.atmosphericTemperature + (double)RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(spd);
+
+                // get gamma
                 double gamma = (double)RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(spd);
 
                 // change density lerp
