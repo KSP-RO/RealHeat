@@ -31,6 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AeroFXFixer.cs" />
     <Compile Include="Checkers.cs" />
     <Compile Include="Utils.cs">
       <SubType>Code</SubType>
@@ -49,6 +50,7 @@
       <HintPath>..\..\..\..\..\..\Games\KSP_1RP0\GameData\ModularFlightIntegrator\ModularFlightIntegrator.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="System, Version=2.0.5.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e, processorArchitecture=MSIL" />
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\Games\KSP_win64\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
