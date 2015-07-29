@@ -11,16 +11,6 @@ namespace RealHeat
     {
         public static Dictionary<string, AtmosphericGasSpecies> idOrganizedListOfGasSpecies;
         public static Dictionary<CelestialBody, AtmosphereComposition> bodyOrganizedListOfAtmospheres;
-        static ConfigNode FARAeroData = null;
-        static bool FARFound = false;
-
-        public static void GetFARNode()
-        {
-            /*foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("FARAeroData"))
-                FARAeroData = node;*/
-
-            FARFound = true;
-        }
 
         public static void LoadConfigNodes()
         {
@@ -65,50 +55,12 @@ namespace RealHeat
                     newComposition.maxSimVelocity = float.Parse(atmNode.GetValue("maxSimVelocity"));
 
                     string bodyName = atmNode.GetValue("name");
-                    if (!FARFound)
-                        GetFARNode();
 
                     for(int idx = 0; idx < FlightGlobals.Bodies.Count; idx++)
                     {
                         CelestialBody body = FlightGlobals.Bodies[idx];
                         if(body.name == bodyName)
                         {
-                            /*bool found = false;
-                            if ((object)FARAeroData != null)
-                            {
-                                foreach(ConfigNode bodyNode in FARAeroData.nodes)
-                                {
-                                    if(int.Parse(bodyNode.GetValue("index")) == idx)
-                                    {
-                                        found = true;
-                                        float ftmp;
-                                        if(bodyNode.HasValue("specHeatRatio"))
-                                        {
-                                            float.TryParse(bodyNode.GetValue("specHeatRatio"), out ftmp);
-                                            newComposition.specHeatRatio = ftmp;
-                                        }
-                                        if (bodyNode.HasValue("gasMolecularWeight"))
-                                        {
-                                            float.TryParse(bodyNode.GetValue("gasMolecularWeight"), out ftmp);
-                                            newComposition.gasConstant = (float)((double)(AtmosphericGasSpecies.UniversalGasConstant) / (double)(ftmp));
-                                        }
-                                    }
-                                }
-                            }
-                            if (!found)
-                            {
-                                double weight = 0f;
-                                double gamma = 0;
-                                foreach (KeyValuePair<AtmosphericGasSpecies, float> kvp in newComposition.gasSpeciesAndMassFractions)
-                                {
-                                    weight += kvp.Key.GetMolecularMass() * kvp.Value;
-                                    double Cp = kvp.Key.CalculateCp(newComposition.referenceTemperature);
-                                    gamma += (Cp / (Cp - (double)kvp.Key.GetSpecificGasConstant())) * (double)kvp.Value;
-                                }
-                                newComposition.gasConstant = (float)((double)(AtmosphericGasSpecies.UniversalGasConstant) / weight);
-                                newComposition.specHeatRatio = (float)gamma;
-
-                            }*/
                             newComposition.specHeatRatio = (float)body.atmosphereAdiabaticIndex;
                             newComposition.gasConstant = (float)((double)(AtmosphericGasSpecies.UniversalGasConstant) / (body.atmosphereMolarMass * 1000d));
                             bodyOrganizedListOfAtmospheres.Add(body, newComposition);

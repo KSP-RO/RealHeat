@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Linq;
 using UnityEngine;
 using KSP;
-using ModularFI;
 
 namespace RealHeat
 {
@@ -15,10 +14,10 @@ namespace RealHeat
         public void Start()
         {
             print("Registering RealHeat overrides with ModularFlightIntegrator");
-            ModularFlightIntegrator.RegisterUpdateThermodynamicsPre(UpdateThermodynamicsPre);
+            ModularFI.ModularFlightIntegrator.RegisterUpdateThermodynamicsPre(UpdateThermodynamicsPre);
         }
 
-        public static void UpdateThermodynamicsPre(ModularFlightIntegrator fi)
+        public static void UpdateThermodynamicsPre(ModularFI.ModularFlightIntegrator fi)
         {
             if (fi.CurrentMainBody != body)
             {
