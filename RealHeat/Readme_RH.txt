@@ -13,5 +13,8 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+v1.1
+* Supports changing aeroFX now. Defaults to making it intense down low, so you can set the normal aeroFX settings to much lower scaling to not have flames on ascent.
+
 v1.0
 * Initial release version of RealHeat for KSP 1.0.4.
