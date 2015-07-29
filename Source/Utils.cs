@@ -13,7 +13,7 @@ namespace RealHeat
         public static AtmTempCurve baseTempCurve = new AtmTempCurve();
 
         public static double aeroFXdensityExponent1 = 2d;
-        public static double aeroFXdensityMult1 = 30d;
+        public static double aeroFXdensityMult1 = 90d;
 
         public static bool debugging = false;
         public static bool multithreadedTempCurve = true;

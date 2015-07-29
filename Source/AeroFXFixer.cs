@@ -39,9 +39,12 @@ namespace RealHeat
         }
         public void Update()
         {
-            CalcFXDensity();
             if ((object)afx != null)
+            {
+                newDensity = afx.airDensity;
+                CalcFXDensity();
                 afx.airDensity = newDensity;
+            }
         }
         public void LateUpdate()
         {
