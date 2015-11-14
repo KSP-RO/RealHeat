@@ -12,9 +12,6 @@ namespace RealHeat
     {
         public static AtmTempCurve baseTempCurve = new AtmTempCurve();
 
-        public static double aeroFXdensityExponent1 = 2d;
-        public static double aeroFXdensityMult1 = 90d;
-
         public static bool debugging = false;
         public static bool multithreadedTempCurve = true;
         protected Rect windowPos = new Rect(100, 100, 0, 0);
@@ -28,15 +25,6 @@ namespace RealHeat
                     bool.TryParse(node.GetValue("debugging"), out debugging);
                 if (node.HasValue("multithreadedTempCurve"))
                     bool.TryParse(node.GetValue("multithreadedTempCurve"), out multithreadedTempCurve);
-
-
-                double dtmp;
-                if (node.HasValue("aeroFXdensityExponent1"))
-                    if (double.TryParse(node.GetValue("aeroFXdensityExponent1"), out dtmp))
-                        aeroFXdensityExponent1 = dtmp;
-                if (node.HasValue("aeroFXdensityMult1"))
-                    if (double.TryParse(node.GetValue("aeroFXdensityMult1"), out dtmp))
-                        aeroFXdensityMult1 = dtmp;
 
                 break;
             }
