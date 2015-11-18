@@ -1,4 +1,4 @@
-RealHeat v1.0
+RealHeat
 by NathanKell and ferram4
 License: CC-BY-SA
 
@@ -13,6 +13,10 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+v2
+* Recompiled for KSP 1.0.5.
+* Removed AeroFX stuff, stock does it itself now.
+
 v1.1
 * Supports changing aeroFX now. Defaults to making it intense down low, so you can set the normal aeroFX settings to much lower scaling to not have flames on ascent. Supports aeroFXdensityExponent1 (default = 2.0) and aeroFXdensityMult1 default = 90), and the final density passed to aeroFX will be (density^aeroFXdensityExponent1 * aeroFXdensityMult1 + density^PhysicsGlobals.aeroFXDensityExponent) instead of just density^PhysicsGlobals.aeroFXDensityExponent.
 
