@@ -44,7 +44,7 @@ namespace RealHeat
 
                 // reset background temps
                 fi.backgroundRadiationTemp = CalculateBackgroundRadiationTemperature(fi.atmosphericTemperature, fi.DensityThermalLerp);
-                fi.backgroundRadiationTempExposed = CalculateBackgroundRadiationTemperature(fi.externalTemperature * 2d, fi.DensityThermalLerp); // blunt bodies multiply BRT by 0.5, so multiply by 2 here.
+                fi.backgroundRadiationTempExposed = CalculateBackgroundRadiationTemperature(fi.externalTemperature, fi.DensityThermalLerp);
                 //print("At rho " + fi.density + "/" + shockDensity + ", gamma " + gamma + ", DTL " + fi.DensityThermalLerp + ", BT = " + fi.backgroundRadiationTempExposed.ToString("N2") + "/" + fi.backgroundRadiationTemp.ToString("N2"));
             }
         }
