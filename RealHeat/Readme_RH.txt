@@ -13,6 +13,9 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+v3
+* Fix an issue with too-high background radiation temperature. This prevents blowups for low-temperature parts, but it may understate radiative heating during lunar-plus reentries. Pending 1.1 for a workaround KSP-side.
+
 v2
 * Recompiled for KSP 1.0.5.
 * Removed AeroFX stuff, stock does it itself now.
