@@ -21,10 +21,24 @@ namespace RealHeat
             enabled = true; // 0.24 compatibility
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("REALHEAT"))
             {
-                if (node.HasValue("debugging"))
-                    bool.TryParse(node.GetValue("debugging"), out debugging);
-                if (node.HasValue("multithreadedTempCurve"))
-                    bool.TryParse(node.GetValue("multithreadedTempCurve"), out multithreadedTempCurve);
+                node.TryGetValue("debugging", ref debugging);
+                node.TryGetValue("multithreadedTempCurve", ref multithreadedTempCurve);
+
+                // Update Occlusion statics
+                node.TryGetValue("detachedShockHeatMult", ref OcclusionCone.detachedShockHeatMult);
+                node.TryGetValue("detachedShockCoeffMult", ref OcclusionCone.detachedShockCoeffMult);
+                node.TryGetValue("detachedBehindShockHeatMult", ref OcclusionCone.detachedBehindShockHeatMult);
+                node.TryGetValue("detachedBehindShockCoeffMult", ref OcclusionCone.detachedBehindShockCoeffMult);
+                node.TryGetValue("detachedShockMachAngleMult", ref OcclusionCone.detachedShockMachAngleMult);
+                node.TryGetValue("detachedShockStartAngle", ref OcclusionCone.detachedShockStartAngle);
+                node.TryGetValue("detachedShockEndAngle", ref OcclusionCone.detachedShockEndAngle);
+                node.TryGetValue("obliqueShockAngleMult", ref OcclusionCone.obliqueShockAngleMult);
+                node.TryGetValue("obliqueShockPartAngleMult", ref OcclusionCone.obliqueShockPartAngleMult);
+                node.TryGetValue("obliqueShockMinAngleMult", ref OcclusionCone.obliqueShockMinAngleMult);
+                node.TryGetValue("obliqueShockConeHeatMult", ref OcclusionCone.obliqueShockConeHeatMult);
+                node.TryGetValue("obliqueShockConeCoeffMult", ref OcclusionCone.obliqueShockConeCoeffMult);
+                node.TryGetValue("obliqueShockCylHeatMult", ref OcclusionCone.obliqueShockCylHeatMult);
+                node.TryGetValue("obliqueShockCylCoeffMult", ref OcclusionCone.obliqueShockCylCoeffMult);
 
                 break;
             }
