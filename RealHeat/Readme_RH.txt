@@ -13,6 +13,10 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+v4
+* Update for KSP 1.1.
+* Use KSP 1.1 feature of changing convective coefficient rather than shock temp when varying convection behind attached and detached shocks. All these are stated in the cfg for tuning.
+
 v3
 * Fix an issue with too-high background radiation temperature. This prevents blowups for low-temperature parts, but it may understate radiative heating during lunar-plus reentries. Pending 1.1 for a workaround KSP-side.
 
