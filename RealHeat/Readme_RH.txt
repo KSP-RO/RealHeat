@@ -13,6 +13,9 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+v4.1
+* Recompile for KSP 1.1.2
+
 v4
 * Update for KSP 1.1.
 * Use KSP 1.1 feature of changing convective coefficient rather than shock temp when varying convection behind attached and detached shocks. All these are stated in the cfg for tuning.
