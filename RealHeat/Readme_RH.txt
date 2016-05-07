@@ -13,6 +13,9 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+v4.2
+* Lower convective coefficient at low density and velocity (we were overestimating convection then).
+
 v4.1
 * Recompile for KSP 1.1.2
 
