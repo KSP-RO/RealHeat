@@ -41,9 +41,9 @@ namespace RealHeat
                 // change density lerp
                 double shockDensity = GetShockDensity(fi.density, fi.mach, gamma);
                 fi.DensityThermalLerp = CalculateDensityThermalLerp(shockDensity);
-                double lerpVal = fi.dynamicPressurekPa * 10d;
+                double lerpVal = fi.dynamicPressurekPa * RealHeatUtils.dynamicPressureMultiplier;
                 if (lerpVal < 1d)
-                    fi.convectiveCoefficient *= UtilMath.LerpUnclamped(0.1d, 1d, lerpVal);
+                    fi.convectiveCoefficient *= UtilMath.LerpUnclamped(RealHeatUtils.minConvectiveCoefficientMultLowQ, 1d, lerpVal);
 
                 // reset background temps
                 fi.backgroundRadiationTemp = CalculateBackgroundRadiationTemperature(fi.atmosphericTemperature, fi.DensityThermalLerp);

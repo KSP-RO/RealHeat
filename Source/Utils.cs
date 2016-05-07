@@ -16,6 +16,9 @@ namespace RealHeat
         public static bool multithreadedTempCurve = true;
         protected Rect windowPos = new Rect(100, 100, 0, 0);
 
+        public static double minConvectiveCoefficientMultLowQ = 0.1d;
+        public static double dynamicPressureMultiplier = 10d;
+
         public void Start()
         {
             enabled = true; // 0.24 compatibility
@@ -39,6 +42,9 @@ namespace RealHeat
                 node.TryGetValue("obliqueShockConeCoeffMult", ref OcclusionCone.obliqueShockConeCoeffMult);
                 node.TryGetValue("obliqueShockCylHeatMult", ref OcclusionCone.obliqueShockCylHeatMult);
                 node.TryGetValue("obliqueShockCylCoeffMult", ref OcclusionCone.obliqueShockCylCoeffMult);
+
+                node.TryGetValue("minConvectiveCoefficientMultLowQ", ref minConvectiveCoefficientMultLowQ);
+                node.TryGetValue("dynamicPressureMultiplier", ref dynamicPressureMultiplier);
 
                 break;
             }
