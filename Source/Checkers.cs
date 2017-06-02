@@ -86,7 +86,6 @@ namespace RealHeat
         // Version of the compatibility checker itself.
 
         private static int _version = 6;
-
         public void Start()
         {
             // Checkers are identified by the type name and version field name.
