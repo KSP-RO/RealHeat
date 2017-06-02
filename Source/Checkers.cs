@@ -41,7 +41,6 @@ namespace RealHeat
      */
 
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
-
     internal class CompatibilityChecker : MonoBehaviour
     {
         public static bool IsCompatible()
