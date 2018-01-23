@@ -46,7 +46,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="ModularFlightIntegrator">
-      <HintPath>..\..\..\..\..\..\Games\RO_113\GameData\ModularFlightIntegrator\ModularFlightIntegrator.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Games\RO_131\GameData\ModularFlightIntegrator\ModularFlightIntegrator.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System, Version=2.0.5.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e, processorArchitecture=MSIL">
