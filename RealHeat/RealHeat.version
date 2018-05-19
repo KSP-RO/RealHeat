@@ -1,0 +1,37 @@
+{
+    "NAME":"Real Heat",
+    "URL":"https://forum.kerbalspaceprogram.com/index.php?/topic/115066-113-realheat-minimalist-v43-july-3/",
+    "DOWNLOAD":"https://github.com/KSP-RO/RealHeat",
+    "GITHUB":
+    {
+        "USERNAME" : "KSP-RO",
+        "REPOSITORY":"RealHeat",
+        "ALLOW_PRE_RELEASE":"false"
+    },
+    "VERSION":
+    {
+        "MAJOR": 4,
+        "MINOR": 6,
+        "PATCH": 0,
+        "BUILD": 0
+    },
+    "KSP_VERSION":
+    {
+        "MAJOR": 1,
+        "MINOR": 4,
+        "PATCH": 3,
+		"BUILD": 0
+    },
+	"KSP_VERSION_MIN": {
+		"MAJOR": 1,
+		"MINOR": 4,
+		"PATCH": 0,
+		"BUILD": 0
+	},
+	"KSP_VERSION_MAX": {
+		"MAJOR": 1,
+		"MINOR": 4,
+		"PATCH": 99,
+		"BUILD": 0
+	}
+}
