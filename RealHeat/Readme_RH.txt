@@ -13,6 +13,13 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+
+v4.7
+* Recompile for KSP 1.4.5
+
+v4.6
+* Recompile for KSP 1.4.3
+
 v4.5
 * Recompile for KSP 1.3.1
 
