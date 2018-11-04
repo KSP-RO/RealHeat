@@ -1,5 +1,5 @@
 RealHeat
-by NathanKell and ferram4
+by NathanKell and ferram4 (maintained by rsparkyc)
 License: CC-BY-SA
 
 This is a simple mod to correct some temperature-related things in KSP's thermal model. Later it will replace things wholesale, building on the work of goozeman and SRFirefox in addition to those above.
@@ -13,6 +13,9 @@ Installation:
 Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
 
 Changelog:
+
+v4.8
+* Recompile for KSP 1.5.1
 
 v4.7
 * Recompile for KSP 1.4.5

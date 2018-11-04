@@ -43,16 +43,16 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Dependencies\1.4.5\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\Dependencies\1.5.1\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="ModularFlightIntegrator">
-      <HintPath>..\..\..\..\..\..\Games\RO_131\GameData\ModularFlightIntegrator\ModularFlightIntegrator.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="ModularFlightIntegrator, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Dependencies\1.5.1\ModularFlightIntegrator.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Dependencies\1.4.5\UnityEngine.dll</HintPath>
+      <HintPath>..\..\Dependencies\1.5.1\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

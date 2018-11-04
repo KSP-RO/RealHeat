@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("RealHeat")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("NathanKell and ferram4")]
+[assembly: AssemblyCompany("NathanKell and ferram4 and rsparkyc")]
 [assembly: AssemblyProduct("RealHeat")]
 [assembly: AssemblyCopyright("Copyright © 2015 - 2018")]
 [assembly: AssemblyTrademark("")]
@@ -36,8 +36,8 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("0.4.7.0")]
-[assembly: AssemblyFileVersion("0.4.7.0")]
+[assembly: AssemblyVersion("0.4.8.0")]
+[assembly: AssemblyFileVersion("0.4.8.0")]
 
 [assembly: KSPAssembly("RealHeat", 4, 0)]
 [assembly: KSPAssemblyDependency("ModularFlightIntegrator", 1, 0)]
