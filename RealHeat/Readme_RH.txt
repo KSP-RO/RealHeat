@@ -10,9 +10,12 @@ Right now it will:
 * Recalculate background radiation temperature (and the density-based interpolation factor used there and in other things) based on the above.
 
 Installation:
-Extract RealHeat folder and ModularFlightIntegrator folders to GameData.
+Extract the RealHeat folder to GameData.
 
 Changelog:
+
+v4.9
+* Recompile for KSP 1.6.1
 
 v4.8
 * Recompile for KSP 1.5.1
