@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -11,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("NathanKell and ferram4 and rsparkyc")]
 [assembly: AssemblyProduct("RealHeat")]
-[assembly: AssemblyCopyright("Copyright © 2015 - 2019")]
+[assembly: AssemblyCopyright("Copyright © 2015 - 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -36,8 +35,8 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("0.5.0.0")]
-[assembly: AssemblyFileVersion("0.5.0.0")]
+[assembly: AssemblyVersion("5.1.0.0")]
+[assembly: AssemblyFileVersion("5.1.0.0")]
 
 [assembly: KSPAssembly("RealHeat", 4, 0)]
 [assembly: KSPAssemblyDependency("ModularFlightIntegrator", 1, 0)]

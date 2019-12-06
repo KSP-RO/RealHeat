@@ -35,10 +35,10 @@ namespace RealHeat
 
         public float EvaluateTempDiffCurve(float vel)
         {
-            if(protoTempCurve != null)
+            if (protoTempCurve != null)
             {
                 tempAdditionFromVelocity = new FloatCurve();
-                Debug.Log("Building Temperature Curve Object...");
+                Debug.Log("[RealHeat] Building Temperature Curve Object...");
                 foreach(CurveData data in protoTempCurve)
                 {
                     tempAdditionFromVelocity.Add(data.x, data.y, data.dy_dx, data.dy_dx);
@@ -47,12 +47,13 @@ namespace RealHeat
             }
             return tempAdditionFromVelocity.Evaluate(vel);
         }
+
         public float EvaluateVelCpCurve(float vel)
         {
             if (protoVelCpCurve != null)
             {
                 velCpCurve = new FloatCurve();
-                Debug.Log("Building Cp Curve Object...");
+                Debug.Log("[RealHeat] Building Cp Curve Object...");
                 foreach (CurveData data in protoVelCpCurve)
                 {
                     velCpCurve.Add(data.x, data.y, data.dy_dx, data.dy_dx);
@@ -80,8 +81,7 @@ namespace RealHeat
                 }
 
                 sw.Close();
-                sw = null;
-                fs = null;
+                fs.Close();
             }
         }
     }

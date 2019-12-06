@@ -14,6 +14,9 @@ Extract the RealHeat folder to GameData.
 
 Changelog:
 
+v5.1
+* Recompile for KSP 1.8
+
 v5.0
 * Recompile for KSP 1.7.3
 

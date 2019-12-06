@@ -6,7 +6,8 @@ namespace RealHeat
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
     public class RealHeat : MonoBehaviour
     {
-        static CelestialBody body = null;
+        private static CelestialBody body = null;
+
         public void Start()
         {
             print("Registering RealHeat overrides with ModularFlightIntegrator");
@@ -26,11 +27,11 @@ namespace RealHeat
                 float spd = (float)fi.spd;
                 
                 // set shock temperature
-                fi.Vessel.externalTemperature = fi.externalTemperature = fi.atmosphericTemperature + (double)RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(spd);
+                fi.Vessel.externalTemperature = fi.externalTemperature = fi.atmosphericTemperature + RealHeatUtils.baseTempCurve.EvaluateTempDiffCurve(spd);
 
                 // get gamma
-                double Cp = (double)RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(spd);
-                double R = (double)RealHeatUtils.baseTempCurve.specificGasConstant;
+                double Cp = RealHeatUtils.baseTempCurve.EvaluateVelCpCurve(spd);
+                double R = RealHeatUtils.baseTempCurve.specificGasConstant;
                 double Cv = Cp - R;
                 double gamma = Cp / Cv;
 

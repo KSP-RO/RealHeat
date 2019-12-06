@@ -77,9 +77,9 @@ namespace RealHeat
                 gasGiantRadius = float.Parse(node.GetValue("gasGiantRadius"));
             }
 
-            foreach(CelestialBody body in FlightGlobals.Bodies)
+            foreach (CelestialBody body in FlightGlobals.Bodies)
             {
-                if(!bodyOrganizedListOfAtmospheres.ContainsKey(body))
+                if (!bodyOrganizedListOfAtmospheres.ContainsKey(body))
                 {
                     if (body.Radius > gasGiantRadius)
                         bodyOrganizedListOfAtmospheres.Add(body, defaultGasGiant);
@@ -97,7 +97,7 @@ namespace RealHeat
             {
                 tempCurveDataContainer container = (tempCurveDataContainer)o;
                 AtmosphereComposition atmosphere = bodyOrganizedListOfAtmospheres[container.body];
-                //Debug.Log("Beginning Temperature Curve Calculation");
+                //Debug.Log("[RealHeat] Beginning Temperature Curve Calculation");
                 Curves result = atmosphere.TemperatureAsFunctionOfVelocity(100, 5, atmosphere.maxSimVelocity);
                 container.callingCurve.protoTempCurve = result.temp;
                 container.callingCurve.protoVelCpCurve = result.cp;
@@ -108,7 +108,7 @@ namespace RealHeat
             }
             catch (Exception e)
             {
-                Debug.LogError("RealHeat: Exception in Temperature Curve Calculation: " + e.StackTrace);
+                Debug.LogError("[RealHeat] Exception in Temperature Curve Calculation: " + e.StackTrace);
             }
             AtmTempCurve.recalculatingCurve = false;
         }
@@ -122,7 +122,7 @@ namespace RealHeat
 
         public static float GetSpecHeatRatio(CelestialBody body)
         {
-            if ((object)body == null)
+            if (body == null)
                 return 0f;
             if (bodyOrganizedListOfAtmospheres.ContainsKey(body))
             {
@@ -133,7 +133,7 @@ namespace RealHeat
         }
         public static float GetGasConstant(CelestialBody body)
         {
-            if ((object)body == null)
+            if (body == null)
                 return 0f;
             if (bodyOrganizedListOfAtmospheres.ContainsKey(body))
             {
@@ -156,7 +156,6 @@ namespace RealHeat
         {
             List<CurveData> velTempCurve = new List<CurveData>();
             List<CurveData> velCpCurve = new List<CurveData>();
-            List<CurveData> velGammaCurve = new List<CurveData>();
 
             Dictionary<AtmosphericGasSpecies, float[]> workingGasSpeciesAndMassFractions = CreateWorkingGasSpeciesAndMassFractionDict();
 
@@ -167,11 +166,10 @@ namespace RealHeat
             //float oldCp = CalculateCp(workingGasSpeciesAndMassFractions, temp);
             while (velocity < maxVel)
             {
-                int i = 0;
+                int i = 0;    // TODO: doesn't do anything; move this outside the while block?
                 UpdateCompositionDueToDecomposition(workingGasSpeciesAndMassFractions, temp);
                 float Cp = CalculateCp(workingGasSpeciesAndMassFractions, temp);
                 float dCp_dt = Calculate_dCp_dt(workingGasSpeciesAndMassFractions, temp);
-                float Cv = Cp - 0f;
                 float energyChange = CalculateEnergyLostThroughDecomposition(workingGasSpeciesAndMassFractions, temp);
 
                 float dT_dV = Cp + dCp_dt * temp + energyChange;
@@ -273,7 +271,7 @@ namespace RealHeat
                 workingGasSpeciesAndMassFractions.Add(pair.Key, new float[]{pair.Value, pair.Value});
             }
             //Then, go through each value and add its decomposition species; continue until no more items can be added to the dictionary
-            int lastCount = workingGasSpeciesAndMassFractions.Count;
+            int lastCount;
             do
             {
                 for (int i = 0; i < workingGasSpeciesAndMassFractions.Count; i++)
@@ -301,9 +299,9 @@ namespace RealHeat
                     tmp[1] += decompositionSpecies.Value * pair.Value[1];
                     workingGasSpeciesAndMassFractions[decompositionSpecies.Key] = tmp;
                 }
-            }          
+            }
 
-            StringBuilder debug = new StringBuilder();
+            //StringBuilder debug = new StringBuilder();
             //debug.AppendLine("Gas Species Initialized");
             //foreach(KeyValuePair<AtmosphericGasSpecies, float[]> pair in workingGasSpeciesAndMassFractions)
             //{
@@ -363,7 +361,7 @@ namespace RealHeat
                 {
                     if (gasSpeciesNode.GetValue("name") == this.id)
                     {
-                        Debug.Log("Loading '" + id + "' data");
+                        Debug.Log($"[RealHeat] Loading '{id}' data");
                         ConfigNode thisNode = gasSpeciesNode;
 
                         degFreedomLowTemp = int.Parse(thisNode.GetValue("degFreedomLowTemp"));
@@ -395,8 +393,8 @@ namespace RealHeat
                 }
             }
 
-            CpLowTemp = ((float)degFreedomLowTemp * 0.5f + 1f) * specificGasConstant;
-            CpHighTemp = ((float)degFreedomHighTemp * 0.5f + 1f) * specificGasConstant;
+            CpLowTemp = (degFreedomLowTemp * 0.5f + 1f) * specificGasConstant;
+            CpHighTemp = (degFreedomHighTemp * 0.5f + 1f) * specificGasConstant;
 
             float tmp = tempLowDegFreedom - tempHighDegFreedom;
             tmp = tmp * tmp * tmp;
@@ -419,8 +417,8 @@ namespace RealHeat
             constantsDecompositionCurve[2] = -6f * tempBeginDecomposition * tempEndDecomposition * tmp;
             constantsDecompositionCurve[3] = -tempBeginDecomposition * tempBeginDecomposition * (tempBeginDecomposition - 3f * tempEndDecomposition) * tmp + 1f;
 
-            
-            //Debug.Log("Initialized Gas Species '" + id + "'\n\r");
+
+            //Debug.Log("[RealHeat] Initialized Gas Species '" + id + "'\n\r");
         }
 
         public float CalculateCp(float temp)

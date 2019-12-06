@@ -52,7 +52,7 @@ namespace RealHeat
 
         public void UpdateTempCurve(GameEvents.HostedFromToAction<Vessel, CelestialBody> a)
         {
-            if(a.host == FlightGlobals.ActiveVessel)
+            if (a.host == FlightGlobals.ActiveVessel)
                 UpdateTempCurve(a.to);
         }
 
@@ -63,13 +63,13 @@ namespace RealHeat
 
         public void UpdateTempCurve(CelestialBody body)
         {
-            Debug.Log("Updating temperature curve for current body.\n\rCurrent body is: " + body.bodyName);
+            Debug.Log("[RealHeat] Updating temperature curve for current body.\n\rCurrent body is: " + body.bodyName);
             baseTempCurve.CalculateNewAtmTempCurve(body, false);
         }
 
         public void UpdateTempCurve()
         {
-            Debug.Log("Updating temperature curve for current body.\n\rCurrent body is: " + FlightGlobals.currentMainBody.bodyName);
+            Debug.Log("[RealHeat] Updating temperature curve for current body.\n\rCurrent body is: " + FlightGlobals.currentMainBody.bodyName);
             baseTempCurve.CalculateNewAtmTempCurve(FlightGlobals.currentMainBody, false);
         }
 
